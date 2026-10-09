@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f5a43">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calendar">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Fulton Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout. The school's wall calendar. A narrow column of what is showing on the left, the calendar itself on the right.
+   Filled entries are space sign-ups educators manage. Outlined entries come from Google Calendar and are view only. */
+:root{
+  --bg:#f3f5ef; --paper:#fffffb; --ink:#22332a; --muted:#5d6e63; --line:#d5ddd2; --line-soft:#e6ebe3;
+  --moss:#2f5a43; --moss-soft:#e3ece4; --marigold:#c47a06; --marigold-soft:#fbefd8;
+  --clay:#a24f35; --clay-soft:#f6e3dc; --danger:#b42318; --focus:#c47a06; --shade:rgba(34,51,42,.45);
+  --e-moss:#2a5440; --e-moss-bg:#dfeae1; --e-sky:#25607c; --e-sky-bg:#dcebf2; --e-marigold:#855300; --e-marigold-bg:#fbecd0;
+  --e-clay:#94452d; --e-clay-bg:#f6e0d8; --e-plum:#6d3f79; --e-plum-bg:#eee0f1; --e-teal:#17635f; --e-teal-bg:#d9eeec;
+  --e-rose:#9c3559; --e-rose-bg:#f8dfe8; --e-slate:#47566a; --e-slate-bg:#e3e8ee;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r:10px; --hh:60px; --gutter:58px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a16; --paper:#1c241f; --ink:#e6ece6; --muted:#9fb0a5; --line:#33413a; --line-soft:#28332d;
+  --moss:#8cc4a2; --moss-soft:#24352b; --marigold:#f0b44a; --marigold-soft:#3a2e17;
+  --clay:#e59a80; --clay-soft:#3b2620; --danger:#ff8f7d; --focus:#f0b44a; --shade:rgba(0,0,0,.6);
+  --e-moss:#9fd3b3; --e-moss-bg:#23382c; --e-sky:#93cbe4; --e-sky-bg:#1c323c; --e-marigold:#f0bb5c; --e-marigold-bg:#3b2e15;
+  --e-clay:#eba48c; --e-clay-bg:#3d2720; --e-plum:#d2a9de; --e-plum-bg:#33243a; --e-teal:#86d2cc; --e-teal-bg:#17332f;
+  --e-rose:#f0a3bf; --e-rose-bg:#3c2029; --e-slate:#b3c0d2; --e-slate-bg:#272f3a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a16; --paper:#1c241f; --ink:#e6ece6; --muted:#9fb0a5; --line:#33413a; --line-soft:#28332d;
+  --moss:#8cc4a2; --moss-soft:#24352b; --marigold:#f0b44a; --marigold-soft:#3a2e17;
+  --clay:#e59a80; --clay-soft:#3b2620; --danger:#ff8f7d; --focus:#f0b44a; --shade:rgba(0,0,0,.6);
+  --e-moss:#9fd3b3; --e-moss-bg:#23382c; --e-sky:#93cbe4; --e-sky-bg:#1c323c; --e-marigold:#f0bb5c; --e-marigold-bg:#3b2e15;
+  --e-clay:#eba48c; --e-clay-bg:#3d2720; --e-plum:#d2a9de; --e-plum-bg:#33243a; --e-teal:#86d2cc; --e-teal-bg:#17332f;
+  --e-rose:#f0a3bf; --e-rose-bg:#3c2029; --e-slate:#b3c0d2; --e-slate-bg:#272f3a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+p{margin:0}
+.c-moss{--c:var(--e-moss);--t:var(--e-moss-bg)} .c-sky{--c:var(--e-sky);--t:var(--e-sky-bg)} .c-marigold{--c:var(--e-marigold);--t:var(--e-marigold-bg)} .c-clay{--c:var(--e-clay);--t:var(--e-clay-bg)}
+.c-plum{--c:var(--e-plum);--t:var(--e-plum-bg)} .c-teal{--c:var(--e-teal);--t:var(--e-teal-bg)} .c-rose{--c:var(--e-rose);--t:var(--e-rose-bg)} .c-slate{--c:var(--e-slate);--t:var(--e-slate-bg)}
+
+.wrap{max-width:1360px;margin:0 auto;padding-inline:16px;padding-block:14px 60px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:6px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.brand h1{font-size:26px;font-weight:700;color:var(--moss);line-height:1.1}
+.spacer{flex:1}
+.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:276px minmax(0,1fr);gap:20px;align-items:start}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.main{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)} .side{order:2}}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.panel-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px}
+.panel h3{white-space:nowrap;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--body);font-weight:600}
+.tagline{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.lock{width:11px;height:11px;flex:none}
+.toggles{display:flex;flex-direction:column;gap:2px}
+.tog{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:start;text-align:left;border:none;background:transparent;border-radius:8px;padding:6px 6px;width:100%}
+.tog:hover{background:var(--bg)}
+.sw{width:15px;height:15px;border-radius:4px;border:2px solid var(--c);background:var(--c);margin-top:3px;flex:none}
+.sw.ring{background:transparent;border-style:dashed;border-width:1.5px}
+.tog[aria-pressed="false"] .sw{background:transparent;border-style:solid;border-color:var(--line)}
+.tog[aria-pressed="false"] .nm{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.tog .nm{font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.tog .sub{font-size:12.5px;color:var(--muted);display:block}
+.tog .sub.bad{color:var(--clay)}
+.empty{color:var(--muted);font-size:13.5px}
+.linkbtn{background:none;border:none;padding:0;color:var(--moss);text-decoration:underline;text-underline-offset:3px;font-size:13.5px;text-align:left}
+.mine-list{display:flex;flex-direction:column;gap:2px}
+.mine-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;text-align:left;border:none;background:transparent;border-radius:8px;padding:6px;width:100%}
+.mine-row:hover{background:var(--bg)}
+.mine-row b{font-weight:600;font-size:13.5px;display:block}
+.mine-row span.sub{font-size:12.5px;color:var(--muted);display:block}
+.key{font-size:12.5px;color:var(--muted);display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 9px;align-items:center}
+.key i{display:block;width:26px;height:14px;border-radius:4px}
+.key i.f{background:var(--e-moss-bg);border:1px solid color-mix(in srgb,var(--e-moss) 35%,transparent)}
+.key i.o{background:var(--paper);border:1.5px dashed var(--e-sky)}
+
+.btn{border:1px solid var(--moss);background:var(--moss);color:var(--paper);border-radius:8px;padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--moss)}
+.btn.warn{background:transparent;color:var(--clay);border-color:var(--clay)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.small{padding:5px 10px;font-size:13px}
+.iconbtn{border:1px solid var(--line);background:var(--paper);border-radius:8px;width:36px;height:36px;display:grid;place-items:center;flex:none}
+.iconbtn:hover{background:var(--moss-soft)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+.seg button{border:none;background:transparent;padding:7px 13px;font-size:13.5px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--moss);color:var(--paper)}
+input[type=text],input[type=date],input[type=password],select,textarea{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.bar .nav{display:flex;align-items:center;gap:6px}
+.bar h2{font-size:24px;font-weight:700;line-height:1.15;min-width:0}
+.bar .right{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-left:auto}
+.notice{border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:12px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.notice.warn{border-color:color-mix(in srgb,var(--marigold) 50%,transparent);background:var(--marigold-soft)}
+#banner{background:var(--danger);color:var(--paper);padding:10px 16px;font-weight:600;text-align:center}
+#banner.soft{background:var(--marigold-soft);color:var(--ink)}
+#preview-bar{background:var(--marigold-soft);border-bottom:1px solid color-mix(in srgb,var(--marigold) 45%,transparent);padding:8px 16px;font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center}
+
+/* time grid, used by the week and day views */
+.cal{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:opacity .15s}
+.cal.busy{opacity:.6}
+.tg-scroll{overflow-x:auto}
+.tg{display:grid;grid-template-columns:var(--gutter) repeat(var(--cols),minmax(var(--colmin,112px),1fr));min-width:100%}
+.tg-corner,.tg-gut{position:sticky;left:0;z-index:3;background:var(--paper);border-right:1px solid var(--line)}
+.tg-head{border-bottom:1px solid var(--line);border-left:1px solid var(--line-soft);padding:8px 8px;background:var(--paper);text-align:left;border-top:none;border-right:none;display:flex;flex-direction:column;gap:1px;min-width:0;font-size:13px}
+.tg-corner + .tg-head,.tg-gut + .tg-col,.tg-gut + .tg-all{border-left:none}
+.tg-corner{border-bottom:1px solid var(--line)}
+button.tg-head:hover{background:var(--bg)}
+.tg-head .d1{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tg-head .d2{font-family:var(--display);font-size:20px;font-weight:500;line-height:1.1}
+.tg-head .d3{font-family:var(--display);font-size:15.5px;font-weight:500;line-height:1.2;display:flex;gap:7px;align-items:center;overflow-wrap:anywhere}
+.tg-head .d3 .sw{margin:0;width:11px;height:11px;border-radius:3px}
+.tg-head .note{font-size:12px;color:var(--muted);line-height:1.3}
+.tg-head.today .d2{color:var(--marigold)}
+.tg-head.today{box-shadow:inset 0 -3px 0 var(--marigold)}
+.tg-all{border-bottom:1px solid var(--line);border-left:1px solid var(--line-soft);padding:4px;display:flex;flex-direction:column;gap:3px;min-width:0;min-height:30px}
+.tg-gut.all{border-bottom:1px solid var(--line);font-size:11px;color:var(--muted);padding:7px 6px 0;text-align:right}
+.tg-gut.hours{position:sticky;height:calc(var(--rows) * var(--hh))}
+.tg-gut.hours span{position:absolute;right:6px;font-size:11px;color:var(--muted);transform:translateY(-50%);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tg-gut.hours span:first-child{transform:translateY(2px)}
+.tg-col{position:relative;height:calc(var(--rows) * var(--hh));border-left:1px solid var(--line-soft);min-width:0;
+  background-image:linear-gradient(to bottom,var(--line-soft) 1px,transparent 1px);background-size:100% var(--hh)}
+.tg-col.slot{cursor:copy}
+.tg-col.slot:hover{background-color:color-mix(in srgb,var(--moss-soft) 45%,transparent)}
+.tg-col.closed{background-color:color-mix(in srgb,var(--line-soft) 55%,transparent)}
+.tg-col.today{background-color:color-mix(in srgb,var(--marigold-soft) 38%,transparent)}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--marigold);z-index:2;pointer-events:none}
+.nowline::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--marigold)}
+.blk{position:absolute;border-radius:6px;padding:3px 6px;text-align:left;overflow:hidden;font-size:12.5px;line-height:1.3;display:flex;flex-direction:column;gap:0;min-width:0;z-index:1}
+.blk b,.chipl b{font-weight:600}
+.blk .l1{font-weight:600;overflow:hidden;text-overflow:ellipsis;display:flex;gap:4px;align-items:center}
+.blk .l1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk .l2,.blk .l3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.92;flex:none}
+.blk.tight{padding:2px 3px;font-size:11.5px;line-height:1.25}
+.blk.tight .l1{display:block}
+.blk.tight .l1 span{text-overflow:clip}
+.blk.tight .lock{display:none}
+.nowline.nodot::before{display:none}
+.blk.bk,.chipl.bk{background:var(--t);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.blk.bk.mine,.chipl.bk.mine{border:1.5px solid var(--c)}
+.blk.ev,.chipl.ev{background:var(--paper);color:var(--c);border:1.5px dashed var(--c)}
+.blk:hover,.chipl:hover{filter:brightness(.97);z-index:4}
+.chipl{border-radius:6px;padding:2px 6px;font-size:12.5px;text-align:left;display:flex;gap:5px;align-items:center;min-width:0;width:100%}
+.chipl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* month */
+.mo{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}
+.mo-dow{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+.mo-cell{border:none;border-top:1px solid var(--line-soft);border-left:1px solid var(--line-soft);background:transparent;min-height:112px;padding:6px;display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0}
+.mo-cell.first{border-left:none}
+.mo-cell:hover{background:var(--bg)}
+.mo-cell.other .mo-num{color:var(--muted);opacity:.7}
+.mo-cell.other .mo-chip{opacity:.55}
+.mo-num{font-family:var(--display);font-size:15px;font-weight:500;line-height:1;width:26px;height:26px;display:grid;place-items:center;border-radius:50%}
+.mo-cell.today .mo-num{background:var(--marigold);color:var(--paper);font-weight:700}
+.mo-items{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mo-chip{font-size:11.5px;line-height:1.35;border-radius:4px;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.mo-chip.bk{background:var(--t);color:var(--c)}
+.mo-chip.ev{color:var(--c);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent)}
+.mo-more{font-size:11.5px;color:var(--muted);padding-left:5px}
+
+/* agenda, the week on a phone */
+.ag-day{border-top:1px solid var(--line)}
+.ag-day:first-child{border-top:none}
+.ag-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;border:none;background:var(--bg);padding:8px 12px;text-align:left;font-family:var(--display);font-weight:500;font-size:15.5px}
+.ag-h.today{color:var(--marigold)}
+.ag-h small{font-family:var(--body);font-size:12.5px;color:var(--moss);font-weight:600}
+.ag-row{display:grid;grid-template-columns:112px 12px minmax(0,1fr);gap:8px;align-items:start;width:100%;border:none;border-top:1px solid var(--line-soft);background:transparent;padding:8px 12px;text-align:left}
+.ag-row:hover{background:var(--bg)}
+.ag-row .tm{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ag-row .sw{margin-top:4px;width:12px;height:12px}
+.ag-row b{font-weight:600;display:block;font-size:14px}
+.ag-row .sub{font-size:12.5px;color:var(--muted);display:block}
+.ag-none{padding:8px 12px;font-size:13px;color:var(--muted);border-top:1px solid var(--line-soft)}
+
+@media (max-width:760px){
+  :root{--gutter:46px}
+  .bar h2{font-size:20px;flex-basis:100%;order:-1}
+  .mo-cell{min-height:64px;padding:4px;align-items:center}
+  .mo-items{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:3px}
+  .mo-chip{width:8px;height:8px;border-radius:50%;padding:0;font-size:0;background:var(--c)}
+  .mo-chip.bk{background:var(--c)}
+  .mo-chip.ev{background:transparent;box-shadow:inset 0 0 0 1.5px var(--c)}
+  .mo-more{font-size:10px;padding:0;flex-basis:100%;text-align:center}
+  .mo-dow{padding:6px 2px;text-align:center;font-size:10.5px}
+}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px)}
+dialog.wide{width:min(760px,calc(100vw - 24px))}
+dialog::backdrop{background:var(--shade)}
+.dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font-size:22px;font-weight:700;color:var(--moss)}
+.dlg h3{font-size:16px;font-weight:500}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500;min-width:0}
+.fld > *{font-size:15px;color:var(--ink);font-weight:400}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.check input{width:17px;height:17px;accent-color:var(--moss);flex:none}
+.hint{color:var(--muted);font-size:13px}
+.nudge{font-size:13.5px;color:var(--clay);background:var(--clay-soft);border-radius:6px;padding:5px 10px}
+.nudge.ok{color:var(--moss);background:var(--moss-soft)}
+.nudge.plain{color:var(--muted);background:var(--bg)}
+.msg{font-size:13.5px;color:var(--danger);min-height:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.info-rows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:14.5px}
+.info-rows dt{color:var(--muted);font-size:12.5px;padding-top:2px}
+.info-rows dd{margin:0;overflow-wrap:anywhere;white-space:pre-line}
+.sect{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.calcard{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) 132px auto;gap:8px;align-items:end}
+.sprow{display:grid;grid-template-columns:minmax(0,1.1fr) 120px minmax(0,1.3fr) auto;gap:8px;align-items:end;border:1px solid var(--line);border-radius:var(--r);padding:10px;background:var(--bg)}
+.sprow .opts{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+@media (max-width:640px){.row3{grid-template-columns:minmax(0,1fr) 110px} .row3 .rm{grid-column:1 / -1;justify-self:start} .sprow{grid-template-columns:minmax(0,1fr) 110px} .sprow .wide,.sprow .rm{grid-column:1 / -1} .sprow .rm{justify-self:start}}
+.status{font-size:13px;color:var(--muted)}
+.status.good{color:var(--moss);font-weight:600}
+.status.bad{color:var(--clay)}
+details.how{font-size:13.5px;color:var(--muted)}
+details.how summary{color:var(--moss);cursor:pointer;font-weight:600}
+details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;max-width:min(560px,calc(100vw - 32px));z-index:200;box-shadow:0 6px 24px var(--shade)}
+
+#gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px 16px}
+#gate .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:28px 24px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px}
+#gate h1{font-size:1.7rem;color:var(--moss)}
+#gate .gmsg{font-size:.9rem;min-height:1.2em;color:var(--muted)}
+#gate .gmsg.bad{color:var(--clay)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div id="gate" hidden>
+  <form class="card" id="gate-form" autocomplete="off">
+    <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><rect x="4" y="7" width="28" height="25" rx="5" fill="none" stroke="var(--moss)" stroke-width="2"/><path d="M4 14h28M11 4v6M25 4v6" stroke="var(--moss)" stroke-width="2" stroke-linecap="round"/><path d="M18 28v-7m0 3c-3 0-5-1.6-5.4-4.4 3 .1 5 1.6 5.4 4.400m0-1.600c3 0 5-1.600 5.400-4.400-3 .1-5 1.600-5.400 4.400" fill="none" stroke="var(--marigold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div class="eyebrow">Fulton Community School &amp; Farm</div><h1>Fulton Calendar</h1></div>
+    <label for="gate-code" style="font-weight:600;font-size:13.5px">Your passcode</label>
+    <input id="gate-code" type="password" autocomplete="current-password" required>
+    <button class="btn" id="gate-btn" type="submit" style="justify-content:center">Sign in</button>
+    <div class="gmsg" id="gate-msg" aria-live="polite"></div>
+  </form>
+</div>
+
+<div id="preview-bar" hidden></div>
+<div id="banner" role="alert" hidden></div>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true"><rect x="4" y="7" width="28" height="25" rx="5" fill="none" stroke="var(--moss)" stroke-width="2"/><path d="M4 14h28M11 4v6M25 4v6" stroke="var(--moss)" stroke-width="2" stroke-linecap="round"/><path d="M18 28v-7m0 3c-3 0-5-1.6-5.4-4.4 3 .1 5 1.6 5.4 4.400m0-1.600c3 0 5-1.600 5.400-4.400-3 .1-5 1.600-5.400 4.400" fill="none" stroke="var(--marigold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><div class="eyebrow">Fulton Community School &amp; Farm</div><h1>Fulton Calendar</h1></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="who"><span id="who-name"></span><button class="btn small ghost" type="button" id="btn-settings" hidden>Settings</button><button class="btn small ghost" type="button" id="btn-signout">Sign out</button></div>
+  </header>
+
+  <div class="grid">
+    <aside class="side">
+      <section class="panel" aria-labelledby="h-cals">
+        <div class="panel-h"><h3 id="h-cals">School calendars</h3><span class="tagline"><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.200" width="8" height="5.800" rx="1.400" fill="currentColor"/><path d="M3.900 5.200V3.800a2.100 2.100 0 0 1 4.200 0v1.400" fill="none" stroke="currentColor" stroke-width="1.300"/></svg>View only</span></div>
+        <div class="toggles" id="cal-toggles"><p class="empty">Loading the calendars.</p></div>
+      </section>
+      <section class="panel" aria-labelledby="h-spaces">
+        <div class="panel-h"><h3 id="h-spaces">Spaces</h3><button class="linkbtn" type="button" id="spaces-all" hidden>Show all</button></div>
+        <div class="toggles" id="space-toggles"><p class="empty">Loading the spaces.</p></div>
+      </section>
+      <section class="panel" aria-labelledby="h-mine">
+        <h3 id="h-mine">Your sign-ups</h3>
+        <div class="mine-list" id="mine-list"><p class="empty">Your upcoming sign-ups will be listed here.</p></div>
+      </section>
+      <section class="panel">
+        <div class="key"><i class="f"></i><span>Filled entries are space sign-ups</span><i class="o"></i><span>Outlined entries come from Google Calendar and cannot be changed here</span></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <div class="bar">
+        <div class="nav">
+          <button class="iconbtn" type="button" id="nav-prev" aria-label="Earlier"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="btn small ghost" type="button" id="nav-today">Today</button>
+          <button class="iconbtn" type="button" id="nav-next" aria-label="Later"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <h2 id="title" aria-live="polite"></h2>
+        <div class="right">
+          <div class="seg" role="group" aria-label="View"><button type="button" data-view="day" aria-pressed="false">Day</button><button type="button" data-view="week" aria-pressed="false">Week</button><button type="button" data-view="month" aria-pressed="false">Month</button></div>
+          <button class="btn" type="button" id="btn-new"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Sign up for a space</button>
+        </div>
+      </div>
+      <div class="notice" id="notice" hidden></div>
+      <div class="cal" id="cal" aria-busy="true"><p class="empty" style="padding:28px 16px">Loading the calendar.</p></div>
+    </main>
+  </div>
+</div>
+
+<dialog id="dlg-book" aria-labelledby="bk-title">
+  <form class="dlg" id="bk-form" novalidate>
+    <h2 id="bk-title">Sign up for a space</h2>
+    <label class="fld">Space<select id="bk-space"></select></label>
+    <p class="hint" id="bk-space-note" hidden></p>
+    <label class="fld">Date<input type="date" id="bk-date" required></label>
+    <div class="two">
+      <label class="fld">From<select id="bk-start"></select></label>
+      <label class="fld">To<select id="bk-end"></select></label>
+    </div>
+    <label class="fld">What it is for<input type="text" id="bk-what" maxlength="80" placeholder="A group or purpose, like small group clay work"></label>
+    <div id="bk-repeat-wrap" style="display:flex;flex-direction:column;gap:10px">
+      <label class="check"><input type="checkbox" id="bk-repeat">Repeat every week</label>
+      <label class="fld" id="bk-until-wrap" hidden>Last week<input type="date" id="bk-until"></label>
+    </div>
+    <p class="hint" id="bk-by" hidden></p>
+    <div class="nudge plain" id="bk-avail" aria-live="polite"></div>
+    <div class="msg" id="bk-msg" role="alert"></div>
+    <div class="actions">
+      <button class="btn" type="submit" id="bk-save">Sign up</button>
+      <button class="btn ghost" type="button" id="bk-cancel">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn warn small" type="button" id="bk-remove" hidden>Remove</button>
+      <button class="btn warn small" type="button" id="bk-remove-all" hidden>Remove this and later weeks</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-info" aria-labelledby="info-title">
+  <div class="dlg">
+    <div><div class="tagline" id="info-tag"></div><h2 id="info-title"></h2></div>
+    <dl class="info-rows" id="info-rows"></dl>
+    <p class="hint" id="info-note"></p>
+    <div class="actions"><button class="btn ghost" type="button" id="info-close">Close</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-set" class="wide" aria-labelledby="set-title">
+  <form class="dlg" id="set-form" novalidate>
+    <h2 id="set-title">Settings</h2>
+    <p class="hint">Only the director sees this page.</p>
+    <div class="sect">
+      <h3>School calendars from Google</h3>
+      <p class="hint">These show for everyone as view only. Nothing here can change a Google calendar. Keep adding and editing events in Google Calendar as usual, and they appear here within about ten minutes.</p>
+      <div id="set-cals" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div><button class="btn small ghost" type="button" id="set-add-cal">Add a calendar</button></div>
+      <details class="how"><summary>Where to find a calendar's address</summary>
+        <ol>
+          <li>On a computer, open Google Calendar.</li>
+          <li>In the left column, point at the calendar's name, choose the three dots, then Settings and sharing.</li>
+          <li>Scroll to Integrate calendar and copy the Secret address in iCal format.</li>
+          <li>Paste it into the address box here and choose Connect.</li>
+        </ol>
+        <p style="margin-top:8px">Anyone holding a secret address can read that calendar, so it is kept on the server and never shown to educators. If your Google account does not offer a secret address, make the calendar public and paste the Public address in iCal format instead.</p>
+      </details>
+    </div>
+    <div class="sect">
+      <h3>Spaces educators can sign up for</h3>
+      <div id="set-spaces" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div><button class="btn small ghost" type="button" id="set-add-space">Add a space</button></div>
+    </div>
+    <div class="sect">
+      <h3>Hours shown</h3>
+      <div class="two">
+        <label class="fld">Day starts at<select id="set-start"></select></label>
+        <label class="fld">Day ends at<select id="set-end"></select></label>
+      </div>
+      <label class="check"><input type="checkbox" id="set-weekends">Show Saturday and Sunday</label>
+    </div>
+    <div class="msg" id="set-msg" role="alert"></div>
+    <div class="actions"><button class="btn" type="submit" id="set-save">Save settings</button><button class="btn ghost" type="button" id="set-close">Close</button></div>
+  </form>
+</dialog>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+"use strict";
+(function(){
+/* ---------- connection ---------- */
+const PREVIEW = window.FC_PREVIEW || null;
+const qs = new URLSearchParams(location.search);
+const DEFAULT_SERVER = "https://fulton-calendar.onrender.com";
+const want = (qs.get("server")||"").replace(/\/+$/,"");
+const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const served = location.pathname.startsWith("/app") && (isLocal || /\.onrender\.com$/.test(location.hostname));   // the copy the server itself serves
+const SERVER = served ? location.origin : (isLocal && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(want) ? want : DEFAULT_SERVER);
+const LS = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v); }catch(e){} } };
+const Auth = { token:LS.get("fc-token"), name:LS.get("fc-name") };
+const $ = id => document.getElementById(id);
+
+function signOut(){ Auth.token=null; LS.set("fc-token",null); LS.set("fc-name",null); location.reload(); }
+async function api(path, body){
+  if(PREVIEW) return PREVIEW.call(path, body||{});
+  let r;
+  try{ r = await fetch(SERVER+path,{method:"POST",headers:{"Content-Type":"application/json",...(Auth.token?{Authorization:"Bearer "+Auth.token}:{})},body:JSON.stringify(body||{})}); }
+  catch(e){ throw {code:"unavailable", message:"The calendar server could not be reached. Check your internet connection and try again."}; }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(r.status===401 && path!=="/login"){ signOut(); throw {code:"session_expired", message:j.error}; }
+  if(!r.ok) throw {status:r.status, message:j.error||("The server answered "+r.status+".")};
+  return j;
+}
+
+/* ---------- dates and times ---------- */
+const dayNum = s => { const p=s.split("-").map(Number); return Math.round(Date.UTC(p[0],p[1]-1,p[2])/864e5); };
+const fromDayNum = n => new Date(n*864e5).toISOString().slice(0,10);
+const addDays = (s,n) => fromDayNum(dayNum(s)+n);
+const dow = s => new Date(dayNum(s)*864e5).getUTCDay();
+const fmt = (s,o) => new Date(dayNum(s)*864e5).toLocaleDateString("en-US",Object.assign({timeZone:"UTC"},o));
+const localToday = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+function clock(min){ const h=Math.floor(min/60), m=min%60, h12=h%12===0?12:h%12; return h12+":"+String(m).padStart(2,"0")+(h>=12&&h<24?" pm":" am"); }
+function shortClock(min){ const h=Math.floor(min/60), m=min%60, h12=h%12===0?12:h%12; return h12+(m?":"+String(m).padStart(2,"0"):"")+(h>=12&&h<24?"p":"a"); }
+function hourLabel(min){ const h=Math.floor(min/60), h12=h%12===0?12:h%12; return h12+(h>=12&&h<24?" pm":" am"); }
+function span(a,b){ const A=clock(a), B=clock(b); return A.slice(-2)===B.slice(-2) ? A.slice(0,-3)+" to "+B : A+" to "+B; }
+const mins = iso => Number(iso.slice(11,13))*60+Number(iso.slice(14,16));
+
+/* ---------- state ---------- */
+const S = { view: ["day","week","month"].includes(LS.get("fc-view")) ? LS.get("fc-view") : "week", anchor: localToday(), data:null, stamp:"", range:null, me:"", director:false,
+  hiddenCals:new Set(), hiddenSpaces:new Set(), busy:false, loadError:"" };
+try{ S.hiddenCals=new Set(JSON.parse(LS.get("fc-hide-cals")||"[]")); S.hiddenSpaces=new Set(JSON.parse(LS.get("fc-hide-spaces")||"[]")); }catch(e){}
+const narrow = window.matchMedia("(max-width: 760px)");
+const today = () => (S.data && S.data.today) || localToday();
+const settings = () => (S.data && S.data.settings) || {calendars:[],spaces:[],dayStart:420,dayEnd:1080,weekends:true};
+const weekendsOn = () => settings().weekends !== false;
+
+function weekDays(anchor){ const start=addDays(anchor,-dow(anchor)); const out=[]; for(let i=0;i<7;i++){ const d=addDays(start,i); if(weekendsOn() || (dow(d)!==0 && dow(d)!==6)) out.push(d); } return out; }
+function computeRange(){
+  if(S.view==="month"){ const first=S.anchor.slice(0,8)+"01"; const from=addDays(first,-dow(first)); return {from, to:addDays(from,41)}; }
+  const from=addDays(S.anchor,-dow(S.anchor)); return {from, to:addDays(from,6)};
+}
+
+/* ---------- small DOM helper. All names and titles are set as text, never as markup ---------- */
+function h(tag, attrs){
+  const el=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){ if(v==null||v===false) continue; if(k==="class") el.className=v; else if(k==="text") el.textContent=v; else if(k.startsWith("on")) el.addEventListener(k.slice(2),v); else if(k==="style") el.style.cssText=v; else el.setAttribute(k, v===true?"":v); }
+  for(let i=2;i<arguments.length;i++){ const c=arguments[i]; if(c==null||c===false) continue; el.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return el;
+}
+const LOCK = '<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.200" width="8" height="5.800" rx="1.400" fill="currentColor"/><path d="M3.900 5.200V3.800a2.100 2.100 0 0 1 4.200 0v1.400" fill="none" stroke="currentColor" stroke-width="1.300"/></svg>';
+function lock(){ const s=document.createElement("span"); s.style.cssText="display:inline-flex;flex:none"; s.innerHTML=LOCK; return s; }
+let toastTimer=0;
+function toast(t){ const el=$("toast"); el.textContent=t; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ el.hidden=true; }, Math.min(9000, 3500+t.length*45)); }
+function banner(msg, soft){ const b=$("banner"); if(!msg){ b.hidden=true; return; } b.hidden=false; b.className=soft?"soft":""; b.textContent=soft? msg : msg+" The calendar can still be read, but nothing new is saved until this is fixed."; }
+
+/* ---------- what falls on each day ---------- */
+function buildIndex(){
+  const idx=new Map(); const get=d=>{ if(!idx.has(d)) idx.set(d,{allDay:[],timed:[]}); return idx.get(d); };
+  const D=S.data; if(!D||!S.range) return idx;
+  const {from,to}=S.range;
+  const cals=new Map(D.settings.calendars.map(c=>[c.id,c])), spaces=new Map(D.settings.spaces.map(s=>[s.id,s]));
+  for(const e of D.events||[]){
+    const cal=cals.get(e.cal); if(!cal||S.hiddenCals.has(cal.id)) continue;
+    if(e.allDay){ for(let d=e.start<from?from:e.start; d<=e.end && d<=to; d=addDays(d,1)) get(d).allDay.push({kind:"event",ev:e,cal}); continue; }
+    const sd=e.start.slice(0,10), ed=e.end.slice(0,10), sm=mins(e.start), em=mins(e.end);
+    if(sd===ed){ get(sd).timed.push({kind:"event",ev:e,cal,start:sm,end:Math.min(1440,Math.max(em,sm+20))}); continue; }
+    for(let d=sd<from?from:sd; d<=ed && d<=to; d=addDays(d,1)){
+      const s=d===sd?sm:0, en=d===ed?em:1440; if(en<=s) continue;
+      if(s===0&&en===1440) get(d).allDay.push({kind:"event",ev:e,cal}); else get(d).timed.push({kind:"event",ev:e,cal,start:s,end:en});
+    }
+  }
+  for(const b of D.bookings||[]){ const sp=spaces.get(b.spaceId); if(!sp||S.hiddenSpaces.has(sp.id)) continue; get(b.date).timed.push({kind:"booking",bk:b,space:sp,start:b.start,end:b.end}); }
+  for(const v of idx.values()) v.timed.sort((a,b)=>a.start-b.start||b.end-a.end);
+  return idx;
+}
+function layout(blocks){
+  const out=blocks.map(b=>Object.assign({},b)); let cluster=[], ends=[], clusterEnd=-1;
+  const flush=()=>{ const n=ends.length; for(const b of cluster) b.cols=n; cluster=[]; ends=[]; clusterEnd=-1; };
+  for(const b of out){
+    if(cluster.length && b.start>=clusterEnd) flush();
+    let c=ends.findIndex(e=>e<=b.start); if(c<0){ c=ends.length; ends.push(0); }
+    ends[c]=b.end; b.col=c; cluster.push(b); clusterEnd=Math.max(clusterEnd,b.end);
+  }
+  flush(); return out;
+}
+
+/* ---------- entries ---------- */
+const HH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hh")) || 60;
+function describe(t){
+  if(t.kind==="event") return t.ev.title+", "+(t.ev.allDay?"all day":span(t.start,t.end))+", "+t.cal.name+", view only";
+  return t.space.name+", "+span(t.start,t.end)+", "+t.bk.by+(t.bk.what?", "+t.bk.what:"");
+}
+function openEntry(t){ if(t.kind==="event") openEventInfo(t.ev,t.cal); else openBooking(t.bk); }
+function blockEl(t, mode, win){
+  const top=(t.start-win[0])/60, height=Math.max((t.end-t.start)/60, 0.42);
+  const cls = t.kind==="event" ? "blk ev c-"+t.cal.color : "blk bk c-"+t.space.color+(t.bk.by===S.me?" mine":"");
+  const el=h("button",{type:"button",class:cls,"aria-label":describe(t),title:describe(t),
+    style:`top:calc(${top} * var(--hh) + 1px);height:calc(${height} * var(--hh) - 2px);left:calc(${t.col/t.cols*100}% + 2px);width:calc(${100/t.cols}% - 4px)`,
+    onclick:e=>{ e.stopPropagation(); openEntry(t); }});
+  const tight=t.cols>=3 && mode==="week";
+  if(tight){ el.classList.add("tight"); el.append(h("span",{class:"l1"}, h("span",{text:t.kind==="event"?t.ev.title:t.space.name}))); return el; }
+  const lines=Math.max(1,Math.floor((height*HH()-8)/16.300));   // only as many lines as the entry is tall
+  let parts;
+  if(t.kind==="event") parts=[h("span",{class:"l1"}, lock(), h("span",{text:t.ev.title})), h("span",{class:"l2",text:span(t.start,t.end)})];
+  else if(mode==="space") parts=[h("span",{class:"l1"}, h("span",{text:t.bk.what||t.bk.by})), t.bk.what?h("span",{class:"l2",text:t.bk.by}):null, h("span",{class:"l3",text:span(t.start,t.end)})].filter(Boolean);
+  else parts=[h("span",{class:"l1"}, h("span",{text:t.space.name})), h("span",{class:"l2",text:t.bk.what? t.bk.what+", "+t.bk.by : t.bk.by}), h("span",{class:"l3",text:span(t.start,t.end)})];
+  el.append(...parts.slice(0,lines));
+  return el;
+}
+function chipEl(t){
+  const cls = t.kind==="event" ? "chipl ev c-"+t.cal.color : "chipl bk c-"+t.space.color;
+  return h("button",{type:"button",class:cls,title:describe(t),onclick:e=>{ e.stopPropagation(); openEntry(t); }}, t.kind==="event"?lock():null, h("span",{text:t.kind==="event"?t.ev.title:t.space.name}));
+}
+
+/* ---------- time grid for week and day ---------- */
+function renderGrid(cols, colMin){
+  let lo=settings().dayStart, hi=settings().dayEnd;
+  for(const c of cols) for(const t of c.timed){ lo=Math.min(lo,Math.floor(t.start/60)*60); hi=Math.max(hi,Math.ceil(t.end/60)*60); }
+  const win=[lo,hi], rows=(hi-lo)/60;
+  const tg=h("div",{class:"tg",style:`--cols:${cols.length};--rows:${rows};--colmin:${colMin}px`});
+  tg.append(h("div",{class:"tg-corner"}));
+  for(const c of cols) tg.append(c.head);
+  if(cols.some(c=>c.allDay.length)){
+    tg.append(h("div",{class:"tg-gut all",text:"All day"}));
+    for(const c of cols){ const cell=h("div",{class:"tg-all"}); for(const t of c.allDay) cell.append(chipEl(t)); tg.append(cell); }
+  }
+  const gut=h("div",{class:"tg-gut hours"});
+  for(let m=lo;m<hi;m+=60) gut.append(h("span",{style:`top:calc(${(m-lo)/60} * var(--hh))`,text:hourLabel(m)}));
+  tg.append(gut);
+  const now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
+  for(const c of cols){
+    const col=h("div",{class:"tg-col"+(c.onSlot?" slot":"")+(c.closed?" closed":"")+(c.isToday?" today":"")});
+    if(c.onSlot){
+      col.title="Sign up for this time";
+      col.addEventListener("click",e=>{ const r=col.getBoundingClientRect(); const hh=r.height/rows; let m=lo+Math.floor((e.clientY-r.top)/hh*2)*30; m=Math.max(lo,Math.min(hi-30,m)); c.onSlot(m); });
+    }
+    for(const t of layout(c.timed)) col.append(blockEl(t,c.mode,win));
+    if(c.showNow && nowMin>=lo && nowMin<=hi) col.append(h("div",{class:"nowline"+(c.noDot?" nodot":""),style:`top:calc(${(nowMin-lo)/60} * var(--hh))`}));
+    tg.append(col);
+  }
+  return h("div",{class:"tg-scroll"},tg);
+}
+function renderWeek(idx){
+  const t=today();
+  const cols=weekDays(S.anchor).map(d=>{ const v=idx.get(d)||{allDay:[],timed:[]};
+    const head=h("button",{type:"button",class:"tg-head"+(d===t?" today":""),title:"Open "+fmt(d,{weekday:"long",month:"long",day:"numeric"}),onclick:()=>go("day",d)}, h("span",{class:"d1",text:fmt(d,{weekday:"short"})}), h("span",{class:"d2",text:String(Number(d.slice(8)))}));
+    return {head, allDay:v.allDay, timed:v.timed, mode:"week", isToday:d===t, showNow:d===t, onSlot: canSignUp()? m=>openBookDialog({date:d,start:m}) : null}; });
+  return renderGrid(cols,112);
+}
+function renderDay(idx){
+  const d=S.anchor, t=today(), v=idx.get(d)||{allDay:[],timed:[]}, st=settings();
+  const cols=[];
+  if(st.calendars.length){
+    const head=h("div",{class:"tg-head"}, h("span",{class:"d3"},h("span",{text:"School calendars"})), h("span",{class:"note"}, "View only"));
+    cols.push({head, allDay:v.allDay, timed:v.timed.filter(x=>x.kind==="event"), mode:"space", showNow:d===t});
+  }
+  for(const sp of st.spaces){ if(S.hiddenSpaces.has(sp.id)) continue;
+    const head=h("div",{class:"tg-head c-"+sp.color}, h("span",{class:"d3"}, h("span",{class:"sw"}), h("span",{text:sp.name})), h("span",{class:"note",text: sp.hidden? "Sign-ups are closed" : (sp.note || (sp.shared?"Can be shared":""))}));
+    cols.push({head, allDay:[], timed:v.timed.filter(x=>x.kind==="booking"&&x.space.id===sp.id), mode:"space", closed:sp.hidden, showNow:d===t, noDot:cols.length>0, onSlot: sp.hidden? null : m=>openBookDialog({date:d,spaceId:sp.id,start:m})});
+  }
+  if(!cols.length) return h("p",{class:"empty",style:"padding:28px 16px",text:"Nothing is set to show. Turn a calendar or a space back on in the list."});
+  return renderGrid(cols,150);
+}
+function renderAgenda(idx){
+  const t=today(), box=h("div",{});
+  for(const d of weekDays(S.anchor)){
+    const v=idx.get(d)||{allDay:[],timed:[]};
+    const day=h("div",{class:"ag-day"});
+    day.append(h("button",{type:"button",class:"ag-h"+(d===t?" today":""),onclick:()=>go("day",d)}, h("span",{text:fmt(d,{weekday:"long",month:"short",day:"numeric"})+(d===t?", today":"")}), h("small",{text:"Open day"})));
+    const rows=v.allDay.concat(v.timed);
+    if(!rows.length) day.append(h("div",{class:"ag-none",text:"Nothing scheduled"}));
+    for(const x of rows){
+      const isEv=x.kind==="event";
+      day.append(h("button",{type:"button",class:"ag-row c-"+(isEv?x.cal.color:x.space.color),onclick:()=>openEntry(x)},
+        h("span",{class:"tm",text: x.start==null? "All day" : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
+        h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (x.bk.what? x.bk.what+", "+x.bk.by : x.bk.by)}))));
+    }
+    box.append(day);
+  }
+  return box;
+}
+function renderMonth(idx){
+  const t=today(), month=S.anchor.slice(0,7), {from}=S.range;
+  const keep=d=>weekendsOn() || (dow(d)!==0&&dow(d)!==6);
+  const days=[]; for(let i=0;i<42;i++){ const d=addDays(from,i); if(keep(d)) days.push(d); }
+  const perRow=weekendsOn()?7:5;
+  const mo=h("div",{class:"mo",style:`--cols:${perRow}`});
+  for(const d of days.slice(0,perRow)) mo.append(h("div",{class:"mo-dow",text:fmt(d,{weekday:"short"})}));
+  const max=narrow.matches?5:3;
+  days.forEach((d,i)=>{
+    if(i>=perRow*5 && days.slice(perRow*5).every(x=>x.slice(0,7)!==month)) return;   // drop a sixth row that belongs wholly to next month
+    const v=idx.get(d)||{allDay:[],timed:[]}; const all=v.allDay.concat(v.timed);
+    const items=h("span",{class:"mo-items"});
+    for(const x of all.slice(0,max)){ const isEv=x.kind==="event"; items.append(h("span",{class:"mo-chip "+(isEv?"ev c-"+x.cal.color:"bk c-"+x.space.color),text:(x.start==null?"":shortClock(x.start)+" ")+(isEv?x.ev.title:x.space.name)})); }
+    if(all.length>max) items.append(h("span",{class:"mo-more",text:"+"+(all.length-max)+(narrow.matches?"":" more")}));
+    const label=fmt(d,{weekday:"long",month:"long",day:"numeric"})+", "+(all.length? all.length+(all.length===1?" entry":" entries") : "nothing scheduled");
+    mo.append(h("button",{type:"button",class:"mo-cell"+(i%perRow===0?" first":"")+(d.slice(0,7)!==month?" other":"")+(d===t?" today":""),"aria-label":label,onclick:()=>go("day",d)}, h("span",{class:"mo-num",text:String(Number(d.slice(8)))}), items));
+  });
+  return mo;
+}
+
+/* ---------- sidebar ---------- */
+function saveHidden(){ LS.set("fc-hide-cals",JSON.stringify([...S.hiddenCals])); LS.set("fc-hide-spaces",JSON.stringify([...S.hiddenSpaces])); }
+function renderSide(){
+  const st=settings(), status=(S.data&&S.data.calendarStatus)||{};
+  const cals=$("cal-toggles"); cals.textContent="";
+  if(!st.calendars.length) cals.append(h("p",{class:"empty",text:"No school calendars are listed."}));
+  for(const c of st.calendars){
+    const s=status[c.id]||{}; const on=!S.hiddenCals.has(c.id);
+    let sub=null;
+    if(!s.connected) sub=h("span",{class:"sub",text:"Not connected yet"});
+    else if(s.error) sub=h("span",{class:"sub bad",text:S.director? s.error : "Could not be loaded just now"});
+    else if(s.loading) sub=h("span",{class:"sub",text:"Loading from Google"});
+    cals.append(h("button",{type:"button",class:"tog c-"+c.color,"aria-pressed":String(on),title:on?"Hide this calendar":"Show this calendar",onclick:()=>{ on?S.hiddenCals.add(c.id):S.hiddenCals.delete(c.id); saveHidden(); render(); }}, h("span",{class:"sw"}), h("span",{}, h("span",{class:"nm",text:c.name}), sub)));
+  }
+  if(S.director && st.calendars.some(c=>!(status[c.id]||{}).connected)) cals.append(h("button",{type:"button",class:"linkbtn",style:"padding:4px 6px",text:"Connect a Google calendar",onclick:openSettings}));
+
+  const sp=$("space-toggles"); sp.textContent="";
+  if(!st.spaces.length){
+    sp.append(h("p",{class:"empty",text:S.director? "No spaces yet. Add the areas educators share, and sign-ups open right away." : "No spaces are set up yet. The director adds them in Settings."}));
+    if(S.director) sp.append(h("div",{},h("button",{type:"button",class:"btn small",text:"Add spaces",onclick:openSettings})));
+  }
+  for(const s of st.spaces){
+    const on=!S.hiddenSpaces.has(s.id);
+    const subText=s.hidden? "Sign-ups are closed" : (s.note || (s.shared? "Can be shared" : ""));
+    sp.append(h("button",{type:"button",class:"tog c-"+s.color,"aria-pressed":String(on),title:on?"Hide this space":"Show this space",onclick:()=>{ on?S.hiddenSpaces.add(s.id):S.hiddenSpaces.delete(s.id); saveHidden(); render(); }}, h("span",{class:"sw"}), h("span",{}, h("span",{class:"nm",text:s.name}), subText?h("span",{class:"sub",text:subText}):null)));
+  }
+  const anyHidden=st.spaces.some(s=>S.hiddenSpaces.has(s.id))||st.calendars.some(c=>S.hiddenCals.has(c.id));
+  $("spaces-all").hidden=!anyHidden;
+
+  const mine=$("mine-list"); mine.textContent="";
+  const list=(S.data&&S.data.mine)||[]; const byId=new Map(st.spaces.map(s=>[s.id,s]));
+  if(!list.length) mine.append(h("p",{class:"empty",text:"You have no upcoming sign-ups."}));
+  for(const b of list){ const space=byId.get(b.spaceId); if(!space) continue;
+    mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(b.what?", "+b.what:"")}), h("span",{class:"sub",text:fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end)+(b.seriesId?", weekly":"")}))));
+  }
+}
+
+/* ---------- main render ---------- */
+function canSignUp(){ return settings().spaces.some(s=>!s.hidden); }
+function titleText(){
+  if(S.view==="month") return fmt(S.anchor,{month:"long",year:"numeric"});
+  if(S.view==="day") return fmt(S.anchor,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const days=weekDays(S.anchor), a=days[0], b=days[days.length-1];
+  if(a.slice(0,7)===b.slice(0,7)) return fmt(a,{month:"long"})+" "+Number(a.slice(8))+" to "+Number(b.slice(8))+", "+b.slice(0,4);
+  return fmt(a,{month:"short",day:"numeric"})+" to "+fmt(b,{month:"short",day:"numeric"})+", "+b.slice(0,4);
+}
+function render(){
+  $("title").textContent=titleText();
+  document.querySelectorAll(".seg [data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===S.view)));
+  $("who-name").textContent=S.me? S.me+(S.director?", director":"") : "";
+  $("btn-settings").hidden=!S.director;
+  $("btn-new").disabled=!S.data||!canSignUp();
+  const cal=$("cal"); cal.classList.toggle("busy",S.busy); cal.setAttribute("aria-busy",String(S.busy));
+  const notice=$("notice"); notice.hidden=true; notice.textContent=""; notice.className="notice";
+  if(!S.data){
+    if(S.loadError){ cal.textContent=""; cal.append(h("div",{style:"padding:28px 16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start"}, h("p",{text:S.loadError}), h("button",{type:"button",class:"btn small",text:"Try again",onclick:()=>refresh(true)}))); }
+    return;
+  }
+  renderSide();
+  const st=settings(), status=S.data.calendarStatus||{};
+  if(S.loadError){ notice.hidden=false; notice.classList.add("warn"); notice.append(h("span",{text:S.loadError+" Showing what was loaded earlier."})); }
+  else if(S.director && !st.spaces.length){ notice.hidden=false; notice.append(h("span",{text:"Start by adding the spaces educators share and connecting the school's Google calendars."}), h("button",{type:"button",class:"btn small",text:"Open Settings",onclick:openSettings})); }
+  else if(!S.director && !st.spaces.length && !st.calendars.some(c=>(status[c.id]||{}).connected)){ notice.hidden=false; notice.append(h("span",{text:"The calendar is still being set up. Spaces and school calendars will appear here once the director adds them."})); }
+  const idx=buildIndex();
+  let body;
+  if(S.view==="month") body=renderMonth(idx);
+  else if(S.view==="day") body=renderDay(idx);
+  else body = narrow.matches ? renderAgenda(idx) : renderWeek(idx);
+  const keep=cal.querySelector(".tg-scroll"); const sx=keep?keep.scrollLeft:0;
+  cal.textContent=""; cal.append(body);
+  const now=cal.querySelector(".tg-scroll"); if(now&&sx) now.scrollLeft=sx;
+}
+let seq=0;
+async function refresh(force){
+  const r=computeRange(); const same=!!S.range&&S.range.from===r.from&&S.range.to===r.to&&!!S.data;
+  S.range=r; const my=++seq;
+  if(!same){ S.busy=true; render(); }
+  try{
+    const j=await api("/api/view",{from:r.from,to:r.to,stamp: same&&!force ? S.stamp : ""});
+    if(my!==seq) return;
+    banner(j.saveError||j.saveWarn, !j.saveError); S.loadError="";
+    if(j.unchanged){ if(S.data) S.data.calendarStatus=j.calendarStatus; }
+    else { S.data=j; S.stamp=j.stamp; S.me=j.me; S.director=!!j.director; }
+  }catch(e){ if(my!==seq) return; if(e.code==="session_expired") return; S.loadError=e.message||"The calendar could not be loaded."; }
+  S.busy=false; render();
+}
+function go(view, anchor){ if(view){ S.view=view; LS.set("fc-view",view); } if(anchor) S.anchor=anchor; refresh(); }
+function step(dir){
+  if(S.view==="month"){ const y=Number(S.anchor.slice(0,4)), m=Number(S.anchor.slice(5,7))-1+dir; const d=new Date(Date.UTC(y,m,1)); go(null,d.toISOString().slice(0,10)); return; }
+  if(S.view==="week"){ go(null,addDays(S.anchor,7*dir)); return; }
+  let d=addDays(S.anchor,dir); if(!weekendsOn()) while(dow(d)===0||dow(d)===6) d=addDays(d,dir);
+  go(null,d);
+}
+
+/* ---------- sign-up dialog ---------- */
+const Bk={edit:null, armed:null};
+function timeOptions(sel, lo, hi, value){ sel.textContent=""; for(let m=lo;m<=hi;m+=15) sel.append(h("option",{value:String(m),text:clock(m)})); if(value!=null && ![...sel.options].some(o=>Number(o.value)===value)){ sel.append(h("option",{value:String(value),text:clock(value)})); } if(value!=null) sel.value=String(value); }
+function bkValues(){ return { spaceId:$("bk-space").value, date:$("bk-date").value, start:Number($("bk-start").value), end:Number($("bk-end").value), what:$("bk-what").value.trim() }; }
+function bkHint(){
+  const v=bkValues(), st=settings(), space=st.spaces.find(s=>s.id===v.spaceId), box=$("bk-avail");
+  const note=$("bk-space-note"); note.hidden=!(space&&space.note); note.textContent=space&&space.note? space.note : "";
+  box.className="nudge plain";
+  if(!space){ box.textContent="Choose a space to see whether it is free."; return; }
+  if(!v.date){ box.textContent="Choose a date."; return; }
+  if(v.end<=v.start){ box.className="nudge"; box.textContent="The end time needs to be after the start time."; return; }
+  if(!S.range || v.date<S.range.from || v.date>S.range.to){ box.textContent="This date is outside the days on screen, so it is checked when you save."; return; }
+  const others=(S.data.bookings||[]).filter(b=>b.spaceId===space.id&&b.date===v.date&&b.start<v.end&&v.start<b.end&&(!Bk.edit||b.id!==Bk.edit.id));
+  if(!others.length){ box.className="nudge ok"; box.textContent=space.name+" is free then."; return; }
+  const o=others[0];
+  if(space.shared){ box.className="nudge ok"; box.textContent=o.by+" is also signed up from "+span(o.start,o.end)+". This space can be shared."; return; }
+  box.className="nudge"; box.textContent="Taken. "+o.by+" has "+space.name+" from "+span(o.start,o.end)+".";
+}
+function disarm(){ Bk.armed=null; $("bk-remove").textContent="Remove"; $("bk-remove-all").textContent="Remove this and later weeks"; }
+function openBookDialog(opts){
+  if(!S.data) return;
+  const st=settings(), edit=opts.edit||null; Bk.edit=edit; disarm();
+  const open=st.spaces.filter(s=>!s.hidden || (edit&&edit.spaceId===s.id));
+  if(!open.length){ toast(S.director? "Add a space in Settings first." : "No spaces are open for sign-ups yet."); return; }
+  const sel=$("bk-space"); sel.textContent="";
+  if(!edit && !opts.spaceId && open.length>1) sel.append(h("option",{value:"",text:"Choose a space"}));
+  for(const s of open) sel.append(h("option",{value:s.id,text:s.name}));
+  const visible=open.filter(s=>!S.hiddenSpaces.has(s.id));
+  sel.value = edit? edit.spaceId : (opts.spaceId || (open.length===1? open[0].id : (visible.length===1? visible[0].id : "")));
+  const lo=Math.min(st.dayStart,360), hi=Math.max(st.dayEnd,1260);
+  let start = edit? edit.start : (opts.start!=null? opts.start : Math.max(st.dayStart, 540));
+  let end = edit? edit.end : Math.min(start+60, 1440);
+  timeOptions($("bk-start"),lo,hi-15,start); timeOptions($("bk-end"),lo+15,hi,end);
+  $("bk-date").value = edit? edit.date : (opts.date || (S.view==="day"? S.anchor : (S.anchor<today()? S.anchor : today())));
+  $("bk-what").value = edit? (edit.what||"") : "";
+  $("bk-repeat").checked=false; $("bk-until-wrap").hidden=true; $("bk-until").value="";
+  $("bk-repeat-wrap").hidden=!!edit;
+  $("bk-title").textContent= edit? "Change a sign-up" : "Sign up for a space";
+  $("bk-save").textContent= edit? "Save changes" : "Sign up";
+  $("bk-remove").hidden=!edit; $("bk-remove-all").hidden=!(edit&&edit.seriesId);
+  const by=$("bk-by"); by.hidden=!(edit&&edit.by!==S.me); by.textContent= edit? "Signed up by "+edit.by+"." : "";
+  $("bk-msg").textContent=""; $("bk-save").disabled=false;
+  bkHint();
+  const d=$("dlg-book"); if(!d.open) d.showModal();
+}
+function openBooking(b){
+  if(S.director || b.by===S.me){ openBookDialog({edit:b}); return; }
+  const space=settings().spaces.find(s=>s.id===b.spaceId);
+  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end)+(b.seriesId?", weekly":"")],["Who",b.by],b.what?["For",b.what]:null], note:"Only "+b.by+" or the director can change this sign-up." });
+}
+function openEventInfo(e, cal){
+  let when;
+  if(e.allDay) when = e.start===e.end ? fmt(e.start,{weekday:"long",month:"long",day:"numeric"})+"\nAll day" : fmt(e.start,{weekday:"short",month:"long",day:"numeric"})+" to "+fmt(e.end,{weekday:"short",month:"long",day:"numeric"});
+  else { const sd=e.start.slice(0,10), ed=e.end.slice(0,10);
+    when = sd===ed ? fmt(sd,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(mins(e.start),mins(e.end)) : fmt(sd,{weekday:"short",month:"short",day:"numeric"})+", "+clock(mins(e.start))+" to "+fmt(ed,{weekday:"short",month:"short",day:"numeric"})+", "+clock(mins(e.end)); }
+  showInfo({ tag:"School calendar, view only", locked:true, title:e.title, rows:[["When",when],["Calendar",cal.name],e.location?["Where",e.location]:null,e.desc?["Details",e.desc]:null], note:"This comes from Google Calendar. Changes are made there and show up here within about ten minutes." });
+}
+function showInfo(o){
+  const tag=$("info-tag"); tag.textContent=""; if(o.locked) tag.append(lock()); tag.append(o.tag);
+  $("info-title").textContent=o.title; $("info-note").textContent=o.note||"";
+  const rows=$("info-rows"); rows.textContent=""; for(const r of o.rows) if(r) rows.append(h("dt",{text:r[0]}),h("dd",{text:r[1]}));
+  const d=$("dlg-info"); if(!d.open) d.showModal();
+}
+async function saveBooking(e){
+  e.preventDefault(); const v=bkValues(), msg=$("bk-msg"), btn=$("bk-save"); msg.textContent="";
+  if(!v.spaceId){ msg.textContent="Choose a space."; return; }
+  if(!v.date){ msg.textContent="Choose a date."; return; }
+  if(v.end<=v.start){ msg.textContent="The end time needs to be after the start time."; return; }
+  const repeat=!Bk.edit && $("bk-repeat").checked;
+  if(repeat && !$("bk-until").value){ msg.textContent="Choose the last week for the weekly sign-up."; return; }
+  btn.disabled=true;
+  try{
+    if(Bk.edit){ await api("/api/booking/update",{id:Bk.edit.id,patch:v}); toast("Sign-up changed."); }
+    else {
+      const r=await api("/api/book",Object.assign({},v,repeat?{repeatUntil:$("bk-until").value}:{}));
+      const space=settings().spaces.find(s=>s.id===v.spaceId), name=space?space.name:"the space";
+      if(r.made.length===1 && !r.skipped.length) toast("You are signed up for "+name+", "+fmt(v.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(v.start,v.end)+".");
+      else toast("You are signed up for "+name+" for "+r.made.length+(r.made.length===1?" week":" weeks")+"."+(r.skipped.length? " Skipped "+r.skipped.map(s=>fmt(s.date,{month:"short",day:"numeric"})+" ("+s.by+" has it)").join(", ")+"." : ""));
+    }
+    $("dlg-book").close(); S.anchor = S.view==="month"? S.anchor : v.date; await refresh(true);
+  }catch(err){ msg.textContent=err.message||"That could not be saved. Try again."; btn.disabled=false; }
+}
+async function removeBooking(scope, btn){
+  if(!Bk.edit) return;
+  if(Bk.armed!==scope){ disarm(); Bk.armed=scope; btn.textContent="Choose again to remove"; setTimeout(()=>{ if(Bk.armed===scope) disarm(); },5000); return; }
+  btn.disabled=true;
+  try{ const r=await api("/api/booking/remove",{id:Bk.edit.id,scope}); $("dlg-book").close(); toast(r.removed.length>1? r.removed.length+" sign-ups removed." : "Sign-up removed."); await refresh(true); }
+  catch(err){ $("bk-msg").textContent=err.message||"That could not be removed. Try again."; }
+  btn.disabled=false; disarm();
+}
+
+/* ---------- settings (director) ---------- */
+const COLOR_NAMES={moss:"Moss",sky:"Sky",marigold:"Marigold",clay:"Clay",plum:"Plum",teal:"Teal",rose:"Rose",slate:"Slate"};
+let Draft=null;
+function colorSelect(value, onchange){ const s=h("select",{"aria-label":"Color",onchange:e=>onchange(e.target.value)}); for(const [k,n] of Object.entries(COLOR_NAMES)) s.append(h("option",{value:k,text:n})); s.value=value; return s; }
+function cloneSettings(){ const st=settings(); return { calendars:st.calendars.map(c=>Object.assign({},c)), spaces:st.spaces.map(s=>Object.assign({},s)), dayStart:st.dayStart, dayEnd:st.dayEnd, weekends:st.weekends!==false }; }
+function programFromDraft(){ return { calendars:Draft.calendars.map(c=>({id:c.id,name:c.name,color:c.color})), spaces:Draft.spaces.filter(s=>(s.name||"").trim()).map(s=>({id:s.id,name:s.name,color:s.color,note:s.note||"",shared:!!s.shared,hidden:!!s.hidden})), dayStart:Draft.dayStart, dayEnd:Draft.dayEnd, weekends:Draft.weekends }; }
+function renderSettings(){
+  const status=(S.data&&S.data.calendarStatus)||{};
+  const cals=$("set-cals"); cals.textContent="";
+  Draft.calendars.forEach((c,i)=>{
+    const s=status[c.id]||{}; const card=h("div",{class:"calcard"});
+    card.append(h("div",{class:"row3"},
+      h("label",{class:"fld"},"Name shown",h("input",{type:"text",maxlength:"40",value:c.name||"",id:"set-cal-name-"+i,oninput:e=>{ c.name=e.target.value; }})),
+      h("label",{class:"fld"},"Color",colorSelect(c.color||"sky",v=>{ c.color=v; })),
+      h("button",{type:"button",class:"btn warn small rm",text:"Remove",onclick:()=>{ Draft.calendars.splice(i,1); renderSettings(); }})));
+    const line=h("p",{class:"status"});
+    if(c.hasAddress && s.error){ line.className="status bad"; line.textContent=s.error; }
+    else if(c.hasAddress){ line.className="status good"; line.textContent="Connected, view only."+(c.secret?"":" Using the public address."); }
+    else line.textContent="Not connected yet. Paste this calendar's address from Google.";
+    const input=h("input",{type:"text",id:"set-cal-addr-"+i,placeholder:c.hasAddress?"Paste a new address to replace the saved one":"https://calendar.google.com/calendar/ical/…",autocomplete:"off",spellcheck:"false","aria-label":"Google Calendar address for "+(c.name||"this calendar")});
+    const busy=CalBusy.i===i;
+    if(busy && CalBusy.address) input.value=CalBusy.address;
+    const msg=h("p",{class:"msg",text:CalMsg.i===i?CalMsg.text:""});
+    const connect=h("button",{type:"button",class:"btn small",disabled:busy,text:busy&&CalBusy.address? "Checking with Google…" : (c.hasAddress?"Replace":"Connect"),onclick:()=>connectCalendar(i,input.value)});
+    card.append(line, h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"}, h("div",{style:"flex:1;min-width:200px"},input), connect, c.hasAddress? h("button",{type:"button",class:"btn warn small",disabled:busy,text:busy&&!CalBusy.address?"Disconnecting…":"Disconnect",onclick:()=>connectCalendar(i,"")}) : null), msg);
+    cals.append(card);
+  });
+  if(!Draft.calendars.length) cals.append(h("p",{class:"empty",text:"No calendars listed. Add one to show a Google calendar."}));
+  $("set-add-cal").hidden=Draft.calendars.length>=4;
+
+  const spaces=$("set-spaces"); spaces.textContent="";
+  Draft.spaces.forEach((s,i)=>{
+    spaces.append(h("div",{class:"sprow"},
+      h("label",{class:"fld"},"Space name",h("input",{type:"text",maxlength:"40",value:s.name||"",id:"set-sp-name-"+i,oninput:e=>{ s.name=e.target.value; }})),
+      h("label",{class:"fld"},"Color",colorSelect(s.color||"moss",v=>{ s.color=v; })),
+      h("label",{class:"fld wide"},"Note for educators, optional",h("input",{type:"text",maxlength:"120",value:s.note||"",id:"set-sp-note-"+i,oninput:e=>{ s.note=e.target.value; }})),
+      h("button",{type:"button",class:"btn warn small rm",text:"Remove",onclick:()=>{ Draft.spaces.splice(i,1); renderSettings(); }}),
+      h("div",{class:"opts"},
+        h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-open-"+i,checked:!s.hidden,onchange:e=>{ s.hidden=!e.target.checked; }}),"Open for sign-ups"),
+        h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-shared-"+i,checked:!!s.shared,onchange:e=>{ s.shared=e.target.checked; }}),"More than one group can use it at the same time"))));
+  });
+  if(!Draft.spaces.length) spaces.append(h("p",{class:"empty",text:"No spaces yet. Add each area educators take turns using."}));
+  const a=$("set-start"), b=$("set-end"); a.textContent=""; b.textContent="";
+  for(let m=0;m<=1320;m+=60) a.append(h("option",{value:String(m),text:hourLabel(m)}));
+  for(let m=120;m<=1440;m+=60) b.append(h("option",{value:String(m),text:m===1440?"12 am, midnight":hourLabel(m)}));
+  a.value=String(Draft.dayStart); b.value=String(Draft.dayEnd); $("set-weekends").checked=Draft.weekends;
+}
+function nextColor(list){ const used=new Set(list.map(x=>x.color)); return Object.keys(COLOR_NAMES).find(c=>!used.has(c)) || "moss"; }
+function openSettings(){ if(!S.director||!S.data) return; Draft=cloneSettings(); CalMsg.i=-1; CalMsg.text=""; $("set-msg").textContent=""; renderSettings(); const d=$("dlg-set"); if(!d.open) d.showModal(); }
+async function saveSettings(quiet){
+  const msg=$("set-msg"); msg.textContent="";
+  if(Draft.dayEnd-Draft.dayStart<120){ msg.textContent="The hours shown need to cover at least two hours."; return false; }
+  $("set-save").disabled=true;
+  try{
+    const r=await api("/api/settings",{program:programFromDraft()});
+    if(S.data) S.data.settings=r.settings; S.stamp="";
+    Draft=cloneSettings(); renderSettings();
+    if(!quiet){ $("dlg-set").close(); toast("Settings saved."); }
+    await refresh(true); return true;
+  }catch(err){ msg.textContent=err.message||"The settings could not be saved. Try again."; return false; }
+  finally{ $("set-save").disabled=false; }
+}
+// The settings list is redrawn while a calendar is being checked, so what is in progress is kept here
+const CalBusy={i:-1,address:""}, CalMsg={i:-1,text:""};
+async function connectCalendar(i, address){
+  address=(address||"").trim(); CalMsg.i=i; CalMsg.text="";
+  const wasConnected=Draft.calendars[i].hasAddress;
+  if(!address && !wasConnected){ CalMsg.text="Paste the calendar's address first."; renderSettings(); return; }
+  if(CalBusy.i>=0) return;
+  CalBusy.i=i; CalBusy.address=address; renderSettings();
+  let done="";
+  try{
+    if(await saveSettings(true)){   // gives a new calendar its place on the server first
+      const cal=Draft.calendars[i];
+      if(cal){
+        const r=await api("/api/calendar/connect",{id:cal.id,address});
+        if(S.data) S.data.settings=r.settings; S.stamp=""; Draft=cloneSettings(); await refresh(true);
+        done=address? "Connected"+(r.found&&r.found.name? " to "+r.found.name : "")+". It shows for everyone as view only." : "Calendar disconnected.";
+      }
+    }
+  }catch(err){ CalMsg.text=err.message||"That calendar could not be connected. Try again."; }
+  if(done) CalBusy.address="";   // on a problem the pasted address stays in the box
+  const keep=CalBusy.address; CalBusy.i=-1; CalBusy.address="";
+  renderSettings();
+  if(keep){ const box=$("set-cal-addr-"+i); if(box) box.value=keep; }
+  if(done) toast(done);
+}
+
+/* ---------- wiring ---------- */
+function wire(){
+  $("nav-prev").onclick=()=>step(-1); $("nav-next").onclick=()=>step(1); $("nav-today").onclick=()=>go(null,today());
+  document.querySelectorAll(".seg [data-view]").forEach(b=>b.onclick=()=>go(b.dataset.view));
+  $("btn-new").onclick=()=>openBookDialog({});
+  $("btn-settings").onclick=openSettings; $("btn-signout").onclick=signOut;
+  $("spaces-all").onclick=()=>{ S.hiddenCals.clear(); S.hiddenSpaces.clear(); saveHidden(); render(); };
+  $("bk-form").addEventListener("submit",saveBooking);
+  $("bk-cancel").onclick=()=>$("dlg-book").close();
+  $("bk-remove").onclick=e=>removeBooking("one",e.currentTarget); $("bk-remove-all").onclick=e=>removeBooking("following",e.currentTarget);
+  ["bk-space","bk-date","bk-end"].forEach(id=>$(id).addEventListener("change",bkHint));
+  $("bk-start").addEventListener("change",()=>{ const s=Number($("bk-start").value), e=Number($("bk-end").value), len=Bk.len||60; if(e<=s){ const sel=$("bk-end"); const want=Math.min(s+len, Number(sel.options[sel.options.length-1].value)); sel.value=String(want); if(Number(sel.value)<=s) sel.value=sel.options[sel.options.length-1].value; } bkHint(); });
+  $("bk-end").addEventListener("change",()=>{ const len=Number($("bk-end").value)-Number($("bk-start").value); if(len>0) Bk.len=len; });
+  $("bk-repeat").addEventListener("change",e=>{ $("bk-until-wrap").hidden=!e.target.checked; if(e.target.checked && !$("bk-until").value && $("bk-date").value) $("bk-until").value=addDays($("bk-date").value,7*7); });
+  $("info-close").onclick=()=>$("dlg-info").close();
+  $("set-form").addEventListener("submit",e=>{ e.preventDefault(); saveSettings(false); });
+  $("set-close").onclick=()=>$("dlg-set").close();
+  $("set-add-cal").onclick=()=>{ Draft.calendars.push({name:"",color:nextColor(Draft.calendars.concat(Draft.spaces))}); renderSettings(); const el=$("set-cal-name-"+(Draft.calendars.length-1)); if(el) el.focus(); };
+  $("set-add-space").onclick=()=>{ Draft.spaces.push({name:"",color:nextColor(Draft.spaces.concat(Draft.calendars)),note:"",shared:false,hidden:false}); renderSettings(); const el=$("set-sp-name-"+(Draft.spaces.length-1)); if(el) el.focus(); };
+  $("set-start").addEventListener("change",e=>{ Draft.dayStart=Number(e.target.value); }); $("set-end").addEventListener("change",e=>{ Draft.dayEnd=Number(e.target.value); });
+  $("set-weekends").addEventListener("change",e=>{ Draft.weekends=e.target.checked; });
+  document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{ if(e.target===d) d.close(); }));   // a click on the dimmed area closes
+  narrow.addEventListener("change",render);
+  document.addEventListener("keydown",e=>{ if(e.target.closest("input,select,textarea,dialog")) return; if(e.key==="ArrowLeft") step(-1); else if(e.key==="ArrowRight") step(1); });
+}
+/* stop checking for changes after 10 quiet minutes, so a forgotten open tab lets the free server sleep */
+const IDLE_MS=10*60*1000; let lastActive=Date.now(), idle=false;
+function noteActive(){ lastActive=Date.now(); if(idle){ idle=false; refresh(); } }
+function poll(){ if(Date.now()-lastActive>IDLE_MS){ idle=true; return; } if(document.hidden||S.busy||document.querySelector("dialog[open]")) return; refresh(); }
+
+/* ---------- sign in ---------- */
+function gateMsg(t,bad){ const m=$("gate-msg"); m.textContent=t||""; m.className="gmsg"+(bad?" bad":""); }
+async function wake(){
+  const t0=Date.now(); let tries=0;
+  while(Date.now()-t0<150000){
+    try{ const r=await fetch(SERVER+"/health",{cache:"no-store"}); if(r.ok){ const j=await r.json(); if(j.ready) return true; if(j.error){ gateMsg(j.error,true); return false; } } }catch(e){}
+    tries++; gateMsg(tries<2? "Connecting…" : "Waking the server. The first visit after a quiet stretch takes about a minute.");
+    await new Promise(r=>setTimeout(r, tries<3?2000:4000));
+  }
+  gateMsg("The server did not wake up. Try again in a minute.",true); return false;
+}
+function showGate(){
+  const g=$("gate"); g.hidden=false; const f=$("gate-form"), b=$("gate-btn"), c=$("gate-code");
+  setTimeout(()=>c.focus(),50);
+  return new Promise(resolve=>{
+    f.onsubmit=async e=>{ e.preventDefault(); b.disabled=true; b.textContent="Signing in…";
+      try{ if(!(await wake())) throw {message:""}; const j=await api("/login",{passcode:c.value}); Auth.token=j.token; Auth.name=j.name; LS.set("fc-token",j.token); LS.set("fc-name",j.name); g.hidden=true; resolve(); }
+      catch(err){ if(err.message) gateMsg(err.message,true); b.disabled=false; b.textContent="Sign in"; c.select(); } };
+  });
+}
+async function start(){
+  wire();
+  if(PREVIEW){ PREVIEW.mount($("preview-bar"), ()=>{ S.stamp=""; refresh(true); }); }
+  else if(!Auth.token) await showGate();
+  else { const g=$("gate"); g.hidden=false; $("gate-form").style.display="none"; const note=h("p",{style:"color:var(--muted)"}); g.append(note);
+    const t=setTimeout(()=>{ note.textContent="Waking the server. The first visit after a quiet stretch takes about a minute."; },2500);
+    const ok=await wake(); clearTimeout(t);
+    if(!ok){ note.textContent="The calendar server could not be reached. Reload the page to try again."; note.style.color="var(--danger)"; return; }
+    g.hidden=true; $("gate-form").style.display=""; note.remove(); }
+  S.me=Auth.name||""; render();
+  await refresh(true);
+  setInterval(poll, 20000);
+  ["pointerdown","keydown","wheel","touchstart"].forEach(ev=>window.addEventListener(ev,noteActive,{passive:true,capture:true}));
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ noteActive(); refresh(); } });
+  setInterval(()=>{ if(!document.hidden && S.view!=="month" && !document.querySelector("dialog[open]")) render(); }, 5*60*1000);   // keeps the line for the current time moving
+}
+start();
+})();
+</script>
+
+</body>
+</html>

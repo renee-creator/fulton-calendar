@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#3d7357"/>
+      <stop offset="1" stop-color="#244a36"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <!-- calendar page -->
+  <rect x="116" y="136" width="280" height="260" rx="34" fill="#f3efe2"/>
+  <path d="M116 170 a34 34 0 0 1 34 -34 h212 a34 34 0 0 1 34 34 v40 h-280 z" fill="#e8a531"/>
+  <g stroke="#f3efe2" stroke-width="20" stroke-linecap="round">
+    <line x1="186" y1="108" x2="186" y2="164"/>
+    <line x1="326" y1="108" x2="326" y2="164"/>
+  </g>
+  <!-- sprout growing on the page -->
+  <path d="M256 362 V 268" stroke="#2f5a43" stroke-width="13" stroke-linecap="round"/>
+  <path d="M256 322 C 226 316 206 298 202 270 C 232 274 252 292 256 316 Z" fill="#3d7357"/>
+  <path d="M256 304 C 286 298 306 280 310 252 C 280 256 260 274 256 298 Z" fill="#3d7357"/>
+  <path d="M196 362 H 316" stroke="#2f5a43" stroke-width="11" stroke-linecap="round" opacity=".45"/>
+</svg>
