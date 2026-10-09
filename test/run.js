@@ -17,7 +17,7 @@ const ok = (name) => { passed++; console.log('  ok', name); };
   const BASE = `http://127.0.0.1:${appPort}`, FEEDS = `http://127.0.0.1:${feedPort}/feeds`;
   const start = () => new Promise(resolve => {
     const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: appPort, GITHUB_API: `http://127.0.0.1:${ghPort}`, RECORDS_REPO: 'o/r', GITHUB_TOKEN: 'test-token',
-      TEACHER_PASSCODES: 'Renee=willow creek 9,Hannah=maple garden 42,Chris=river stone 7', DIRECTOR_NAMES: 'Renee', FLUSH_DELAY_MS: '50', FEED_TEST_BASE: `http://127.0.0.1:${feedPort}`, TZ: 'UTC' }, stdio: ['ignore', 'pipe', 'pipe'] });
+      TEACHER_PASSCODES: 'Renee=willow creek 9,Hannah=maple garden 42,Chris=river stone 7,barn owl 55', DIRECTOR_NAMES: 'Renee', FLUSH_DELAY_MS: '50', FEED_TEST_BASE: `http://127.0.0.1:${feedPort}`, TZ: 'UTC' }, stdio: ['ignore', 'pipe', 'pipe'] });
     let buf = ''; child.stdout.on('data', d => { buf += d; if (process.env.SHOW) process.stdout.write(d); if (/Loaded \d+ sign-ups/.test(buf)) resolve(child); });
     child.stderr.on('data', d => process.stderr.write(d));
   });
@@ -85,6 +85,17 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     assert.equal((await post('/api/book', { spaceId: 'nope', date: '2026-10-13', start: 540, end: 600 }, chris.token)).status, 400);
     assert.equal((await post('/api/book', { spaceId: atelier.id, date: '2026-02-30', start: 540, end: 600 }, chris.token)).status, 400);
     ok('sign-ups, conflicts, shared spaces, bad input');
+
+    // a passcode shared by several educators signs in as Staff, and each sign-up carries the educator's own name
+    const staff = (await post('/login', { passcode: 'barn owl 55' })).body; assert.equal(staff.name, 'Staff'); assert.equal(staff.shared, true);
+    assert.equal((await post('/api/book', { spaceId: atelier.id, date: '2026-10-14', start: 540, end: 600 }, staff.token)).status, 400);
+    b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-14', start: 540, end: 600, who: 'Ellie' }, staff.token); assert.equal(b.status, 200); assert.equal(b.body.made[0].by, 'Staff'); assert.equal(b.body.made[0].who, 'Ellie');
+    b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-14', start: 570, end: 630, who: 'Felila' }, staff.token); assert.equal(b.status, 409); assert.match(b.body.error, /Ellie has it from/);
+    let sv = (await post('/api/view', { from: '2026-10-12', to: '2026-10-18', who: 'Ellie' }, staff.token)).body; assert.equal(sv.shared, true); assert.equal(sv.mine.length, 1);
+    sv = (await post('/api/view', { from: '2026-10-12', to: '2026-10-18', who: 'Felila' }, staff.token)).body; assert.equal(sv.mine.length, 0);
+    assert.equal((await post('/api/booking/update', { id: sv.bookings.find(x => x.who === 'Ellie').id, patch: { what: 'Clay', who: '' } }, staff.token)).status, 400);
+    assert.equal((await post('/api/booking/remove', { id: sv.bookings.find(x => x.who === 'Ellie').id }, staff.token)).body.removed.length, 1);
+    ok('shared passcode sign-ups carry the educator name');
 
     // weekly
     b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-06', start: 540, end: 585, what: 'Weekly atelier', repeatUntil: '2026-11-03' }, chris.token);

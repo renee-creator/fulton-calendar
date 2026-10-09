@@ -71,7 +71,7 @@ function checkSession(tok) {
   let s; try { s = JSON.parse(Buffer.from(body.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')); } catch (e) { return null; }
   if (!s || typeof s.n !== 'string' || !(s.e > Date.now())) return null;
   if (!TEACHERS.some(t => t.name === s.n)) return null;   // an educator removed on Render is signed out
-  return { name: s.n, director: isDirector(s.n) };
+  return { name: s.n, director: isDirector(s.n), shared: s.n === 'Staff' };   // Staff is the name given to a passcode shared by several educators
 }
 function readSession(req) { const h = String(req.headers.authorization || ''); return checkSession(h.startsWith('Bearer ') ? h.slice(7).trim() : ''); }
 function matchPasscode(given) {
@@ -438,7 +438,7 @@ async function handle(req, res) {
     const t = matchPasscode(body.passcode);
     if (!t) { noteWrong(ip); err(req, res, 403, 'That passcode is not right. Check with Renee if you have forgotten it.'); return; }
     log('Signed in', t.name);
-    json(req, res, 200, { token: makeSession(t.name), name: t.name, director: isDirector(t.name) });
+    json(req, res, 200, { token: makeSession(t.name), name: t.name, director: isDirector(t.name), shared: t.name === 'Staff' });
     return;
   }
 
@@ -453,10 +453,11 @@ async function handle(req, res) {
     const { from, to } = body;
     if (!DATE_RE.test(from || '') || !DATE_RE.test(to || '') || !Core.validDate(from) || !Core.validDate(to) || to < from || Core.dayNum(to) - Core.dayNum(from) > 100) { err(req, res, 400, 'That date range is not valid.'); return; }
     const ev = await eventsFor(from, to);
-    const stamp = [BOOT_ID, rev, feedRev, from, to, schoolToday()].join('.');
+    const who = me.shared ? text(body.who, 40) : '';
+    const stamp = [BOOT_ID, rev, feedRev, from, to, schoolToday(), crypto.createHash('sha1').update(who).digest('hex').slice(0, 8)].join('.');
     const base = { stamp, saveError: store.saveError || undefined, saveWarn: saveWarn() || undefined, calendarStatus: ev.status };
     if (body.stamp === stamp) { json(req, res, 200, Object.assign(base, { unchanged: true })); return; }
-    json(req, res, 200, Object.assign(base, { me: me.name, director: me.director, today: schoolToday(), settings: settingsFor(me), bookings: core.view(from, to), events: ev.events, mine: core.mine(me.name, 8) }));
+    json(req, res, 200, Object.assign(base, { me: me.name, director: me.director, today: schoolToday(), settings: settingsFor(me), bookings: core.view(from, to), events: ev.events, shared: me.shared || undefined, mine: me.shared ? (who ? core.mine(me.name, 8, who) : []) : core.mine(me.name, 8) }));
     return;
   }
   if (path === '/api/book') { json(req, res, 200, core.book(me, body)); return; }

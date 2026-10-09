@@ -298,6 +298,7 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
 <dialog id="dlg-book" aria-labelledby="bk-title">
   <form class="dlg" id="bk-form" novalidate>
     <h2 id="bk-title">Sign up for a space</h2>
+    <label class="fld" id="bk-who-wrap" hidden>Your name<input type="text" id="bk-who" maxlength="40" autocomplete="given-name" placeholder="So everyone can see who has the space"></label>
     <label class="fld">Space<select id="bk-space"></select></label>
     <p class="hint" id="bk-space-note" hidden></p>
     <label class="fld">Date<input type="date" id="bk-date" required></label>
@@ -425,7 +426,8 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       if (n > 400) throw fail(400, 'Sign-ups can be made up to about a year ahead.');
       if (n < -400) throw fail(400, 'That date is too far in the past.');
     }
-    function takenLine(space, c) { return space.name + ' is already taken then. ' + c.by + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
+    const nameOf = b => b.who || b.by;   // with a shared passcode the educator's own name is kept in who
+    function takenLine(space, c) { return space.name + ' is already taken then. ' + nameOf(c) + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
     function mayChange(ctx, b) { return ctx.director || b.by === ctx.name; }
 
     function book(ctx, input) {
@@ -434,7 +436,8 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden) throw fail(409, space.name + ' is not open for sign-ups right now.');
       checkDate(input.date); checkTimes(input.start, input.end);
-      const what = text(input.what, 80);
+      const what = text(input.what, 80), who = text(input.who, 40);
+      if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const dates = [input.date];
       if (input.repeatUntil) {
         if (!validDate(input.repeatUntil) || input.repeatUntil < input.date) throw fail(400, 'The last week needs to be on or after the first date.');
@@ -449,18 +452,21 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       const made = [], months = new Set();
       for (const p of open) {
         const b = { id: newId(), spaceId: space.id, date: p.date, start: input.start, end: input.end, by: ctx.name, what, createdAt: Date.now() };
+        if (who) b.who = who;
         if (seriesId) b.seriesId = seriesId;
         put(b); made.push(b); months.add(b.date.slice(0, 7));
       }
       for (const m of months) onBooking(m, ctx.name);
-      return { made, skipped: plan.filter(p => p.clash).map(p => ({ date: p.date, by: p.clash.by, start: p.clash.start, end: p.clash.end })) };
+      return { made, skipped: plan.filter(p => p.clash).map(p => ({ date: p.date, by: nameOf(p.clash), start: p.clash.start, end: p.clash.end })) };
     }
 
     function update(ctx, id, patch) {
       const b = byId.get(id); patch = patch || {};
       if (!b) throw fail(404, 'That sign-up no longer exists. Someone may have removed it.');
-      if (!mayChange(ctx, b)) throw fail(403, 'Only ' + b.by + ' or the director can change this sign-up.');
+      if (!mayChange(ctx, b)) throw fail(403, 'Only ' + nameOf(b) + ' or the director can change this sign-up.');
       const next = { spaceId: patch.spaceId != null ? patch.spaceId : b.spaceId, date: patch.date != null ? patch.date : b.date, start: patch.start != null ? patch.start : b.start, end: patch.end != null ? patch.end : b.end, what: patch.what != null ? text(patch.what, 80) : b.what };
+      const who = patch.who != null ? text(patch.who, 40) : (b.who || '');
+      if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const space = spaceFor(next.spaceId);
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden && next.spaceId !== b.spaceId) throw fail(409, space.name + ' is not open for sign-ups right now.');
@@ -468,7 +474,7 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       const clash = space.shared ? null : clashFor(space.id, next.date, next.start, next.end, b.id);
       if (clash) throw fail(409, takenLine(space, clash));
       const oldMonth = b.date.slice(0, 7);
-      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); put(b);
+      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; put(b);
       onBooking(oldMonth, ctx.name); if (b.date.slice(0, 7) !== oldMonth) onBooking(b.date.slice(0, 7), ctx.name);
       return { booking: b };
     }
@@ -478,7 +484,7 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       if (!b) return { removed: [] };
       let targets = [b];
       if (scope === 'following' && b.seriesId) targets = [...byId.values()].filter(x => x.seriesId === b.seriesId && x.date >= b.date);
-      for (const t of targets) if (!mayChange(ctx, t)) throw fail(403, 'Only ' + t.by + ' or the director can remove this sign-up.');
+      for (const t of targets) if (!mayChange(ctx, t)) throw fail(403, 'Only ' + nameOf(t) + ' or the director can remove this sign-up.');
       const months = new Set();
       for (const t of targets) { drop(t); months.add(t.date.slice(0, 7)); }
       for (const m of months) onBooking(m, ctx.name);
@@ -509,10 +515,10 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
     }
 
     function view(from, to) { const out = []; for (const [date, m] of byDay) if (date >= from && date <= to) for (const b of m.values()) out.push(b); return out; }
-    function mine(name, limit) {
+    function mine(name, limit, who) {
       const t = today();
       const seen = new Set();   // a weekly sign-up is listed once, by its next date
-      return [...byId.values()].filter(b => b.by === name && b.date >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
+      return [...byId.values()].filter(b => b.by === name && (!who || b.who === who) && b.date >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
         .filter(b => { if (!b.seriesId) return true; if (seen.has(b.seriesId)) return false; seen.add(b.seriesId); return true; }).slice(0, limit || 8);
     }
     return { book, update, remove, setProgram, view, mine, get program() { return program; }, count: () => byId.size };
@@ -650,7 +656,7 @@ function span(a,b){ const A=clock(a), B=clock(b); return A.slice(-2)===B.slice(-
 const mins = iso => Number(iso.slice(11,13))*60+Number(iso.slice(14,16));
 
 /* ---------- state ---------- */
-const S = { view: ["day","week","month"].includes(LS.get("fc-view")) ? LS.get("fc-view") : "week", anchor: localToday(), data:null, stamp:"", range:null, me:"", director:false,
+const S = { view: ["day","week","month"].includes(LS.get("fc-view")) ? LS.get("fc-view") : "week", anchor: localToday(), data:null, stamp:"", range:null, me:"", director:false, shared:false, who:(LS.get("fc-who")||"").slice(0,40),
   hiddenCals:new Set(), hiddenSpaces:new Set(), busy:false, loadError:"" };
 try{ S.hiddenCals=new Set(JSON.parse(LS.get("fc-hide-cals")||"[]")); S.hiddenSpaces=new Set(JSON.parse(LS.get("fc-hide-spaces")||"[]")); }catch(e){}
 const narrow = window.matchMedia("(max-width: 760px)");
@@ -709,15 +715,17 @@ function layout(blocks){
 }
 
 /* ---------- entries ---------- */
+const nameOf = b => b.who || b.by;   // with a shared passcode, who holds the educator's own name
+const isMine = b => b.by===S.me && (!S.shared || (!!S.who && b.who===S.who));
 const HH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hh")) || 60;
 function describe(t){
   if(t.kind==="event") return t.ev.title+", "+(t.ev.allDay?"all day":span(t.start,t.end))+", "+t.cal.name+", view only";
-  return t.space.name+", "+span(t.start,t.end)+", "+t.bk.by+(t.bk.what?", "+t.bk.what:"");
+  return t.space.name+", "+span(t.start,t.end)+", "+nameOf(t.bk)+(t.bk.what?", "+t.bk.what:"");
 }
 function openEntry(t){ if(t.kind==="event") openEventInfo(t.ev,t.cal); else openBooking(t.bk); }
 function blockEl(t, mode, win){
   const top=(t.start-win[0])/60, height=Math.max((t.end-t.start)/60, 0.42);
-  const cls = t.kind==="event" ? "blk ev c-"+t.cal.color : "blk bk c-"+t.space.color+(t.bk.by===S.me?" mine":"");
+  const cls = t.kind==="event" ? "blk ev c-"+t.cal.color : "blk bk c-"+t.space.color+(isMine(t.bk)?" mine":"");
   const el=h("button",{type:"button",class:cls,"aria-label":describe(t),title:describe(t),
     style:`top:calc(${top} * var(--hh) + 1px);height:calc(${height} * var(--hh) - 2px);left:calc(${t.col/t.cols*100}% + 2px);width:calc(${100/t.cols}% - 4px)`,
     onclick:e=>{ e.stopPropagation(); openEntry(t); }});
@@ -726,8 +734,8 @@ function blockEl(t, mode, win){
   const lines=Math.max(1,Math.floor((height*HH()-8)/16.300));   // only as many lines as the entry is tall
   let parts;
   if(t.kind==="event") parts=[h("span",{class:"l1"}, lock(), h("span",{text:t.ev.title})), h("span",{class:"l2",text:span(t.start,t.end)})];
-  else if(mode==="space") parts=[h("span",{class:"l1"}, h("span",{text:t.bk.what||t.bk.by})), t.bk.what?h("span",{class:"l2",text:t.bk.by}):null, h("span",{class:"l3",text:span(t.start,t.end)})].filter(Boolean);
-  else parts=[h("span",{class:"l1"}, h("span",{text:t.space.name})), h("span",{class:"l2",text:t.bk.what? t.bk.what+", "+t.bk.by : t.bk.by}), h("span",{class:"l3",text:span(t.start,t.end)})];
+  else if(mode==="space") parts=[h("span",{class:"l1"}, h("span",{text:t.bk.what||nameOf(t.bk)})), t.bk.what?h("span",{class:"l2",text:nameOf(t.bk)}):null, h("span",{class:"l3",text:span(t.start,t.end)})].filter(Boolean);
+  else parts=[h("span",{class:"l1"}, h("span",{text:t.space.name})), h("span",{class:"l2",text:t.bk.what? t.bk.what+", "+nameOf(t.bk) : nameOf(t.bk)}), h("span",{class:"l3",text:span(t.start,t.end)})];
   el.append(...parts.slice(0,lines));
   return el;
 }
@@ -797,7 +805,7 @@ function renderAgenda(idx){
       const isEv=x.kind==="event";
       day.append(h("button",{type:"button",class:"ag-row c-"+(isEv?x.cal.color:x.space.color),onclick:()=>openEntry(x)},
         h("span",{class:"tm",text: x.start==null? "All day" : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
-        h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (x.bk.what? x.bk.what+", "+x.bk.by : x.bk.by)}))));
+        h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (x.bk.what? x.bk.what+", "+nameOf(x.bk) : nameOf(x.bk))}))));
     }
     box.append(day);
   }
@@ -854,7 +862,7 @@ function renderSide(){
 
   const mine=$("mine-list"); mine.textContent="";
   const list=(S.data&&S.data.mine)||[]; const byId=new Map(st.spaces.map(s=>[s.id,s]));
-  if(!list.length) mine.append(h("p",{class:"empty",text:"You have no upcoming sign-ups."}));
+  if(!list.length) mine.append(h("p",{class:"empty",text:S.shared&&!S.who? "Your sign-ups will be listed here after your first one." : "You have no upcoming sign-ups."}));
   for(const b of list){ const space=byId.get(b.spaceId); if(!space) continue;
     mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(b.what?", "+b.what:"")}), h("span",{class:"sub",text:fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end)+(b.seriesId?", weekly":"")}))));
   }
@@ -872,7 +880,7 @@ function titleText(){
 function render(){
   $("title").textContent=titleText();
   document.querySelectorAll(".seg [data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===S.view)));
-  $("who-name").textContent=S.me? S.me+(S.director?", director":"") : "";
+  $("who-name").textContent=S.me? (S.shared&&S.who? S.who : S.me)+(S.director?", director":"") : "";
   $("btn-settings").hidden=!S.director;
   $("btn-new").disabled=!S.data||!canSignUp();
   const cal=$("cal"); cal.classList.toggle("busy",S.busy); cal.setAttribute("aria-busy",String(S.busy));
@@ -901,11 +909,11 @@ async function refresh(force){
   S.range=r; const my=++seq;
   if(!same){ S.busy=true; render(); }
   try{
-    const j=await api("/api/view",{from:r.from,to:r.to,stamp: same&&!force ? S.stamp : ""});
+    const j=await api("/api/view",{from:r.from,to:r.to,who:S.who,stamp: same&&!force ? S.stamp : ""});
     if(my!==seq) return;
     banner(j.saveError||j.saveWarn, !j.saveError); S.loadError="";
     if(j.unchanged){ if(S.data) S.data.calendarStatus=j.calendarStatus; }
-    else { S.data=j; S.stamp=j.stamp; S.me=j.me; S.director=!!j.director; }
+    else { S.data=j; S.stamp=j.stamp; S.me=j.me; S.director=!!j.director; S.shared=!!j.shared; }
   }catch(e){ if(my!==seq) return; if(e.code==="session_expired") return; S.loadError=e.message||"The calendar could not be loaded."; }
   S.busy=false; render();
 }
@@ -920,7 +928,7 @@ function step(dir){
 /* ---------- sign-up dialog ---------- */
 const Bk={edit:null, armed:null};
 function timeOptions(sel, lo, hi, value){ sel.textContent=""; for(let m=lo;m<=hi;m+=15) sel.append(h("option",{value:String(m),text:clock(m)})); if(value!=null && ![...sel.options].some(o=>Number(o.value)===value)){ sel.append(h("option",{value:String(value),text:clock(value)})); } if(value!=null) sel.value=String(value); }
-function bkValues(){ return { spaceId:$("bk-space").value, date:$("bk-date").value, start:Number($("bk-start").value), end:Number($("bk-end").value), what:$("bk-what").value.trim() }; }
+function bkValues(){ return { spaceId:$("bk-space").value, date:$("bk-date").value, start:Number($("bk-start").value), end:Number($("bk-end").value), what:$("bk-what").value.trim(), ...($("bk-who-wrap").hidden? {} : {who:$("bk-who").value.trim()}) }; }
 function bkHint(){
   const v=bkValues(), st=settings(), space=st.spaces.find(s=>s.id===v.spaceId), box=$("bk-avail");
   const note=$("bk-space-note"); note.hidden=!(space&&space.note); note.textContent=space&&space.note? space.note : "";
@@ -932,8 +940,8 @@ function bkHint(){
   const others=(S.data.bookings||[]).filter(b=>b.spaceId===space.id&&b.date===v.date&&b.start<v.end&&v.start<b.end&&(!Bk.edit||b.id!==Bk.edit.id));
   if(!others.length){ box.className="nudge ok"; box.textContent=space.name+" is free then."; return; }
   const o=others[0];
-  if(space.shared){ box.className="nudge ok"; box.textContent=o.by+" is also signed up from "+span(o.start,o.end)+". This space can be shared."; return; }
-  box.className="nudge"; box.textContent="Taken. "+o.by+" has "+space.name+" from "+span(o.start,o.end)+".";
+  if(space.shared){ box.className="nudge ok"; box.textContent=nameOf(o)+" is also signed up from "+span(o.start,o.end)+". This space can be shared."; return; }
+  box.className="nudge"; box.textContent="Taken. "+nameOf(o)+" has "+space.name+" from "+span(o.start,o.end)+".";
 }
 function disarm(){ Bk.armed=null; $("bk-remove").textContent="Remove"; $("bk-remove-all").textContent="Remove this and later weeks"; }
 function openBookDialog(opts){
@@ -957,7 +965,9 @@ function openBookDialog(opts){
   $("bk-title").textContent= edit? "Change a sign-up" : "Sign up for a space";
   $("bk-save").textContent= edit? "Save changes" : "Sign up";
   $("bk-remove").hidden=!edit; $("bk-remove-all").hidden=!(edit&&edit.seriesId);
-  const by=$("bk-by"); by.hidden=!(edit&&edit.by!==S.me); by.textContent= edit? "Signed up by "+edit.by+"." : "";
+  const askName = edit? (edit.by==="Staff" || !!edit.who) : S.shared;   // a shared passcode cannot tell educators apart, so the form asks
+  $("bk-who-wrap").hidden=!askName; $("bk-who").value = edit? (edit.who||"") : S.who;
+  const by=$("bk-by"); by.hidden=!(edit&&!askName&&edit.by!==S.me); by.textContent= edit? "Signed up by "+nameOf(edit)+"." : "";
   $("bk-msg").textContent=""; $("bk-save").disabled=false;
   bkHint();
   const d=$("dlg-book"); if(!d.open) d.showModal();
@@ -965,7 +975,7 @@ function openBookDialog(opts){
 function openBooking(b){
   if(S.director || b.by===S.me){ openBookDialog({edit:b}); return; }
   const space=settings().spaces.find(s=>s.id===b.spaceId);
-  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end)+(b.seriesId?", weekly":"")],["Who",b.by],b.what?["For",b.what]:null], note:"Only "+b.by+" or the director can change this sign-up." });
+  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end)+(b.seriesId?", weekly":"")],["Who",nameOf(b)],b.what?["For",b.what]:null], note:"Only "+nameOf(b)+" or the director can change this sign-up." });
 }
 function openEventInfo(e, cal){
   let when;
@@ -982,6 +992,7 @@ function showInfo(o){
 }
 async function saveBooking(e){
   e.preventDefault(); const v=bkValues(), msg=$("bk-msg"), btn=$("bk-save"); msg.textContent="";
+  if(v.who==="" ){ msg.textContent="Add your name so everyone can see who has the space."; $("bk-who").focus(); return; }
   if(!v.spaceId){ msg.textContent="Choose a space."; return; }
   if(!v.date){ msg.textContent="Choose a date."; return; }
   if(v.end<=v.start){ msg.textContent="The end time needs to be after the start time."; return; }
@@ -989,6 +1000,7 @@ async function saveBooking(e){
   if(repeat && !$("bk-until").value){ msg.textContent="Choose the last week for the weekly sign-up."; return; }
   btn.disabled=true;
   try{
+    if(S.shared && v.who && !(Bk.edit && S.director)){ S.who=v.who; LS.set("fc-who",v.who); }   // remembered on this device for next time
     if(Bk.edit){ await api("/api/booking/update",{id:Bk.edit.id,patch:v}); toast("Sign-up changed."); }
     else {
       const r=await api("/api/book",Object.assign({},v,repeat?{repeatUntil:$("bk-until").value}:{}));

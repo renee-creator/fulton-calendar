@@ -53,7 +53,8 @@
       if (n > 400) throw fail(400, 'Sign-ups can be made up to about a year ahead.');
       if (n < -400) throw fail(400, 'That date is too far in the past.');
     }
-    function takenLine(space, c) { return space.name + ' is already taken then. ' + c.by + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
+    const nameOf = b => b.who || b.by;   // with a shared passcode the educator's own name is kept in who
+    function takenLine(space, c) { return space.name + ' is already taken then. ' + nameOf(c) + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
     function mayChange(ctx, b) { return ctx.director || b.by === ctx.name; }
 
     function book(ctx, input) {
@@ -62,7 +63,8 @@
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden) throw fail(409, space.name + ' is not open for sign-ups right now.');
       checkDate(input.date); checkTimes(input.start, input.end);
-      const what = text(input.what, 80);
+      const what = text(input.what, 80), who = text(input.who, 40);
+      if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const dates = [input.date];
       if (input.repeatUntil) {
         if (!validDate(input.repeatUntil) || input.repeatUntil < input.date) throw fail(400, 'The last week needs to be on or after the first date.');
@@ -77,18 +79,21 @@
       const made = [], months = new Set();
       for (const p of open) {
         const b = { id: newId(), spaceId: space.id, date: p.date, start: input.start, end: input.end, by: ctx.name, what, createdAt: Date.now() };
+        if (who) b.who = who;
         if (seriesId) b.seriesId = seriesId;
         put(b); made.push(b); months.add(b.date.slice(0, 7));
       }
       for (const m of months) onBooking(m, ctx.name);
-      return { made, skipped: plan.filter(p => p.clash).map(p => ({ date: p.date, by: p.clash.by, start: p.clash.start, end: p.clash.end })) };
+      return { made, skipped: plan.filter(p => p.clash).map(p => ({ date: p.date, by: nameOf(p.clash), start: p.clash.start, end: p.clash.end })) };
     }
 
     function update(ctx, id, patch) {
       const b = byId.get(id); patch = patch || {};
       if (!b) throw fail(404, 'That sign-up no longer exists. Someone may have removed it.');
-      if (!mayChange(ctx, b)) throw fail(403, 'Only ' + b.by + ' or the director can change this sign-up.');
+      if (!mayChange(ctx, b)) throw fail(403, 'Only ' + nameOf(b) + ' or the director can change this sign-up.');
       const next = { spaceId: patch.spaceId != null ? patch.spaceId : b.spaceId, date: patch.date != null ? patch.date : b.date, start: patch.start != null ? patch.start : b.start, end: patch.end != null ? patch.end : b.end, what: patch.what != null ? text(patch.what, 80) : b.what };
+      const who = patch.who != null ? text(patch.who, 40) : (b.who || '');
+      if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const space = spaceFor(next.spaceId);
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden && next.spaceId !== b.spaceId) throw fail(409, space.name + ' is not open for sign-ups right now.');
@@ -96,7 +101,7 @@
       const clash = space.shared ? null : clashFor(space.id, next.date, next.start, next.end, b.id);
       if (clash) throw fail(409, takenLine(space, clash));
       const oldMonth = b.date.slice(0, 7);
-      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); put(b);
+      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; put(b);
       onBooking(oldMonth, ctx.name); if (b.date.slice(0, 7) !== oldMonth) onBooking(b.date.slice(0, 7), ctx.name);
       return { booking: b };
     }
@@ -106,7 +111,7 @@
       if (!b) return { removed: [] };
       let targets = [b];
       if (scope === 'following' && b.seriesId) targets = [...byId.values()].filter(x => x.seriesId === b.seriesId && x.date >= b.date);
-      for (const t of targets) if (!mayChange(ctx, t)) throw fail(403, 'Only ' + t.by + ' or the director can remove this sign-up.');
+      for (const t of targets) if (!mayChange(ctx, t)) throw fail(403, 'Only ' + nameOf(t) + ' or the director can remove this sign-up.');
       const months = new Set();
       for (const t of targets) { drop(t); months.add(t.date.slice(0, 7)); }
       for (const m of months) onBooking(m, ctx.name);
@@ -137,10 +142,10 @@
     }
 
     function view(from, to) { const out = []; for (const [date, m] of byDay) if (date >= from && date <= to) for (const b of m.values()) out.push(b); return out; }
-    function mine(name, limit) {
+    function mine(name, limit, who) {
       const t = today();
       const seen = new Set();   // a weekly sign-up is listed once, by its next date
-      return [...byId.values()].filter(b => b.by === name && b.date >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
+      return [...byId.values()].filter(b => b.by === name && (!who || b.who === who) && b.date >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
         .filter(b => { if (!b.seriesId) return true; if (seen.has(b.seriesId)) return false; seen.add(b.seriesId); return true; }).slice(0, limit || 8);
     }
     return { book, update, remove, setProgram, view, mine, get program() { return program; }, count: () => byId.size };
