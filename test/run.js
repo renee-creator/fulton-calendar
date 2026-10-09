@@ -57,6 +57,8 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     assert.equal((await post('/api/calendar/connect', { id: 'cal1', address: FEEDS + '/page.ics' }, renee.token)).status, 422);
     const c = await post('/api/calendar/connect', { id: 'cal1', address: FEEDS + '/good.ics' }, renee.token);
     assert.equal(c.status, 200); assert.equal(c.body.found.name, 'Fulton School Calendar'); assert.equal(c.body.settings.calendars[0].hasAddress, true);
+    assert.equal(c.body.settings.calendars[0].name, 'Fulton School Calendar');   // a starter name is replaced by Google's name
+    assert.equal(c.body.settings.calendars[1].name, 'Staff calendar');
     assert.ok(!JSON.stringify(c.body).includes('good.ics'), 'address is never sent back');
     ok('calendar connect checks the address');
 

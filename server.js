@@ -304,6 +304,14 @@ function expand(calId, parsed, from, to) {
   }
   return out;
 }
+// A calendar still carrying a starter name takes the name Google gives it. A name the director typed is left alone.
+const STARTER_NAMES = new Set(['School calendar', 'Second calendar', 'Calendar']);
+function adoptName(calId, name) {
+  if (!name || !core) return;
+  const p = core.program; const cal = p.calendars.find(c => c.id === calId);
+  if (!cal || !STARTER_NAMES.has(cal.name) || p.calendars.some(c => c.name === name)) return;
+  try { core.setProgram({ director: true, name: 'the server' }, Object.assign({}, p, { calendars: p.calendars.map(c => c.id === calId ? Object.assign({}, c, { name }) : c) })); log('Calendar', calId, 'named from Google'); } catch (e) {}
+}
 const feeds = new Map();   // calendar id to { address, fetchedAt, parsed, error, hash, running }
 let feedRev = 0;
 function feedError(status) {
@@ -325,7 +333,7 @@ function loadFeed(calId) {
     if (feeds.get(calId) !== f) return f;   // disconnected or replaced while loading
     const before = f.hash + '|' + f.error;
     f.fetchedAt = Date.now(); f.error = error;
-    if (parsed) { f.parsed = parsed; f.hash = hash; }
+    if (parsed) { f.parsed = parsed; f.hash = hash; adoptName(calId, parsed.name); }
     if (f.hash + '|' + f.error !== before) { feedRev++; viewCache.clear(); }
     if (error) log('Calendar', calId, 'problem.', error);
     return f;
@@ -468,6 +476,7 @@ async function handle(req, res) {
       feedAddresses[cal.id] = address;
       feeds.set(cal.id, { address, fetchedAt: Date.now(), parsed, error: '', hash: crypto.createHash('sha1').update(r.text).digest('hex'), running: null });
       body.found = { name: parsed.name, events: parsed.events.length };
+      adoptName(cal.id, parsed.name);
     }
     feedRev++; viewCache.clear(); lastBy.set(FEEDS_PATH, me.name); scheduleSave(FEEDS_PATH);
     json(req, res, 200, { settings: settingsFor(me), found: body.found || null });
