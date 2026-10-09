@@ -321,6 +321,8 @@ function adoptName(calId, name) {
   if (!cal || !STARTER_NAMES.has(cal.name) || p.calendars.some(c => c.name === name)) return;
   try { core.setProgram({ director: true, name: 'the server' }, Object.assign({}, p, { calendars: p.calendars.map(c => c.id === calId ? Object.assign({}, c, { name }) : c) })); log('Calendar', calId, 'named from Google'); } catch (e) {}
 }
+// Feeds stamp every entry with the moment they were sent, so that line is left out when checking whether anything changed
+const feedHash = body => crypto.createHash('sha1').update(body.replace(/^DTSTAMP[^\r\n]*\r?\n/gm, '')).digest('hex');
 const feeds = new Map();   // calendar id to { address, fetchedAt, parsed, error, hash, running }
 let feedRev = 0;
 function feedError(status, address) {
@@ -339,7 +341,7 @@ function loadFeed(calId) {
     try {
       const r = await fetchText(address);
       if (r.status !== 200) error = feedError(r.status, address);
-      else { hash = crypto.createHash('sha1').update(r.text).digest('hex'); if (hash === f.hash && f.parsed) parsed = f.parsed; else parsed = parseFeed(r.text); }
+      else { hash = feedHash(r.text); if (hash === f.hash && f.parsed) parsed = f.parsed; else parsed = parseFeed(r.text); }
     } catch (e) { error = e.message === 'not a calendar' ? 'That address did not return a calendar. Copy the address again and paste it here.' : 'This calendar could not be read just now. ' + (e.message || ''); }
     if (feeds.get(calId) !== f) return f;   // disconnected or replaced while loading
     const before = f.hash + '|' + f.error;
@@ -486,7 +488,7 @@ async function handle(req, res) {
       if (r.status !== 200) { err(req, res, 422, r.status ? feedError(r.status, address) : 'The calendar could not be reached just now. ' + (r.message || '') + ' Try again in a minute.'); return; }
       let parsed; try { parsed = parseFeed(r.text); } catch (e) { err(req, res, 422, 'That address did not return a calendar. Copy the address again and paste it here.'); return; }
       feedAddresses[cal.id] = address;
-      feeds.set(cal.id, { address, fetchedAt: Date.now(), parsed, error: '', hash: crypto.createHash('sha1').update(r.text).digest('hex'), running: null });
+      feeds.set(cal.id, { address, fetchedAt: Date.now(), parsed, error: '', hash: feedHash(r.text), running: null });
       body.found = { name: parsed.name, events: parsed.events.length };
       adoptName(cal.id, parsed.name);
     }
