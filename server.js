@@ -259,7 +259,14 @@ function parseFeed(body) {
   const masters = new Map(); const events = [];
   for (const e of all) if (!e.isRecurrenceException()) { masters.set(e.uid, e); events.push(e); }
   for (const e of all) if (e.isRecurrenceException()) { const m = masters.get(e.uid); if (m) { try { m.relateException(e); } catch (x) {} } else events.push(e); }
-  return { name: text(comp.getFirstPropertyValue('x-wr-calname'), 60), events };
+  return { name: text(comp.getFirstPropertyValue('x-wr-calname'), 60), events, raw: (body.match(/^BEGIN:VEVENT/gmi) || []).length };
+}
+// For the log, how a small feed's entries spread over dates. Counts only, never titles or names.
+function feedShape(parsed) {
+  if (parsed.events.length > 80) return '';
+  const days = new Map(); let repeating = 0;
+  for (const e of parsed.events) { try { if (e.isRecurring()) repeating++; const d = wall(e.startDate).day; days.set(d, (days.get(d) || 0) + 1); } catch (x) {} }
+  return ' By start date ' + [...days].sort().map(([d, n]) => d + ' x' + n).join(', ') + (repeating ? '. Repeating entries ' + repeating : '');
 }
 // A time from the feed, as the date and clock time people at the school would see
 function wall(t) {
@@ -337,7 +344,7 @@ function loadFeed(calId) {
     if (feeds.get(calId) !== f) return f;   // disconnected or replaced while loading
     const before = f.hash + '|' + f.error;
     f.fetchedAt = Date.now(); f.error = error;
-    if (parsed) { if (hash !== f.hash) log('Calendar', calId, 'read,', parsed.events.length, 'entries'); f.parsed = parsed; f.hash = hash; adoptName(calId, parsed.name); }
+    if (parsed) { if (hash !== f.hash) log('Calendar', calId, 'read,', parsed.events.length, 'entries kept of', parsed.raw, 'in the feed.' + feedShape(parsed)); f.parsed = parsed; f.hash = hash; adoptName(calId, parsed.name); }
     if (f.hash + '|' + f.error !== before) { feedRev++; viewCache.clear(); }
     if (error) log('Calendar', calId, 'problem.', error);
     return f;
