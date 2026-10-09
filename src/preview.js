@@ -13,8 +13,9 @@
   const core = C.createCore({ newId, today: () => today, onBooking: () => { rev++; }, onProgram: () => { rev++; },
     program: { calendars: [{ id: 'cal1', name: 'School calendar', color: 'sky' }, { id: 'cal2', name: 'Staff calendar', color: 'plum' }],
       spaces: [{ id: 'sp01', name: 'Atelier', color: 'marigold', note: 'Example space' }, { id: 'sp02', name: 'Garden', color: 'moss', note: 'Example space', shared: true }, { id: 'sp03', name: 'Kitchen', color: 'clay', note: 'Example space' }, { id: 'sp04', name: 'Library corner', color: 'teal', note: 'Example space' }, { id: 'sp05', name: 'Big yard', color: 'slate', note: 'Example space', byWeek: true }],
+      classes: ['West', 'North', 'South'], groups: [{ name: 'Cosmos', room: 'West' }, { name: 'Marigold', room: 'North' }, { name: 'Iris', room: 'South' }],
       dayStart: 420, dayEnd: 1080, weekends: true } });
-  const seed = (who, spaceId, offset, start, end, what, weeks) => { try { const date = C.addDays(sunday, offset); core.book({ name: who }, { spaceId, date, start, end, what, repeatUntil: weeks ? C.addDays(date, 7 * weeks) : undefined }); } catch (e) {} };
+  const seed = (who, spaceId, offset, start, end, what, weeks) => { try { const date = C.addDays(sunday, offset); core.book({ name: who }, { spaceId, date, start, end, what, group: ['Cosmos, West', 'Marigold, North', 'Iris, South', 'North, whole class'][(n + offset) % 4], repeatUntil: weeks ? C.addDays(date, 7 * weeks) : undefined }); } catch (e) {} };
   seed('Hannah', 'sp01', 1, 570, 630, 'Small group clay work', 3);
   seed('Chris', 'sp01', 2, 540, 600, 'Wire and paper');
   seed('Renee', 'sp01', 3, 600, 660, 'Light table');

@@ -73,6 +73,7 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     assert.equal(v.calendarStatus.cal1.ok, true); assert.equal(v.calendarStatus.cal2.connected, false);
     ok('events expand, skip exceptions, convert time zones, drop cancelled');
 
+    let u;
     // sign-ups
     let b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-13', start: 540, end: 600, what: 'Clay with Poppy group' }, hannah.token);
     assert.equal(b.status, 200); const first = b.body.made[0]; assert.equal(first.by, 'Hannah');
@@ -114,6 +115,16 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     assert.throws(() => normalizeFeed('https://signupgenius.com.evil.example/feed.ics')); assert.throws(() => normalizeFeed('http://www.signupgenius.com/feed.ics'));
     ok('SignUpGenius addresses accepted');
 
+    // who a sign-up is for comes from the classes and small groups kept in settings
+    cur0 = (await post('/api/view', { from: '2026-10-05', to: '2026-10-11' }, renee.token)).body.settings;
+    s = await post('/api/settings', { program: { ...cur0, classes: ['West', 'North', 'South'], groups: [{ name: 'Cosmos', room: 'West' }, { name: '', room: 'x' }, { name: 'Iris', room: 'South' }] } }, renee.token);
+    assert.deepEqual(s.body.settings.classes, ['West', 'North', 'South']); assert.deepEqual(s.body.settings.groups, [{ name: 'Cosmos', room: 'West' }, { name: 'Iris', room: 'South' }]);
+    b = await post('/api/book', { spaceId: garden.id, date: '2026-10-15', start: 540, end: 600, group: 'Cosmos, West', what: 'Seed saving' }, hannah.token); assert.equal(b.body.made[0].group, 'Cosmos, West');
+    u = await post('/api/booking/update', { id: b.body.made[0].id, patch: { group: 'West, whole class' } }, hannah.token); assert.equal(u.body.booking.group, 'West, whole class'); assert.equal(u.body.booking.what, 'Seed saving');
+    u = await post('/api/booking/update', { id: b.body.made[0].id, patch: { group: '' } }, hannah.token); assert.equal(u.body.booking.group, undefined);
+    assert.equal((await post('/api/booking/remove', { id: b.body.made[0].id }, hannah.token)).body.removed.length, 1);
+    ok('class and small group choices');
+
     // weekly
     b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-06', start: 540, end: 585, what: 'Weekly atelier', repeatUntil: '2026-11-03' }, chris.token);
     assert.equal(b.status, 200); assert.equal(b.body.made.length, 4); assert.deepEqual(b.body.skipped.map(x => x.date), ['2026-10-13']);
@@ -123,7 +134,7 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     // changing and removing
     assert.equal((await post('/api/booking/update', { id: first.id, patch: { start: 480 } }, chris.token)).status, 403);
     assert.equal((await post('/api/booking/update', { id: first.id, patch: { start: 510, end: 630 } }, hannah.token)).status, 409);   // would run into Chris at 10
-    let u = await post('/api/booking/update', { id: first.id, patch: { start: 510, end: 600, what: 'Clay, earlier' } }, hannah.token); assert.equal(u.status, 200); assert.equal(u.body.booking.start, 510);
+    u = await post('/api/booking/update', { id: first.id, patch: { start: 510, end: 600, what: 'Clay, earlier' } }, hannah.token); assert.equal(u.status, 200); assert.equal(u.body.booking.start, 510);
     u = await post('/api/booking/update', { id: first.id, patch: { date: '2026-11-10' } }, renee.token); assert.equal(u.status, 200);   // director may move it, across months
     assert.equal((await post('/api/booking/remove', { id: series[1].id, scope: 'following' }, hannah.token)).status, 403);
     const rm = await post('/api/booking/remove', { id: series[1].id, scope: 'following' }, chris.token); assert.equal(rm.body.removed.length, 3);

@@ -54,6 +54,25 @@ p{margin:0}
 @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)} .side{order:2}}
 .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
 .panel-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px}
+details.fold{display:block}
+.fold > summary{list-style:none;pointer-events:none}
+.fold > summary::-webkit-details-marker{display:none}
+.fold-body{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.nomodal{position:fixed;inset:0;margin:auto;z-index:150;display:block;overflow:auto;height:fit-content;box-shadow:0 0 0 100vmax var(--shade)}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:40px}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
+.dl-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;background:var(--bg);padding:10px 12px;font-family:var(--display);font-weight:500;font-size:17px;border-top:1px solid var(--line)}
+.dl-h:first-child{border-top:none}
+.dl-h small{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:500}
+.dl-space{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line-soft)}
+.dl-space .sw{margin:0}
+.dl-name b{font-weight:600;display:block;font-size:16px;overflow-wrap:anywhere}
+.dl-name .sub{font-size:14px;color:var(--muted);display:block}
+.dl-row{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;align-items:start;width:calc(100% - 24px);margin:0 12px 8px;border-radius:8px;padding:9px 10px;text-align:left;background:var(--t);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.dl-row.mine{border:1.5px solid var(--c)}
+.dl-row .tm{font-size:14px;font-variant-numeric:tabular-nums}
+.dl-row b{font-weight:600;display:block;font-size:15.5px}
+.dl-row .sub{font-size:14px;display:block;opacity:.92}
 .panel h3{white-space:nowrap;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--body);font-weight:600}
 .tagline{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .lock{width:11px;height:11px;flex:none}
@@ -85,6 +104,7 @@ p{margin:0}
 .btn.warn{background:transparent;color:var(--clay);border-color:var(--clay)}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.small{padding:5px 10px;font-size:13px}
+#btn-new .short{display:none}
 .iconbtn{border:1px solid var(--line);background:var(--paper);border-radius:8px;width:36px;height:36px;display:grid;place-items:center;flex:none}
 .iconbtn:hover{background:var(--moss-soft)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
@@ -190,11 +210,45 @@ button.tg-head:hover{background:var(--bg)}
   .mo-chip.bk{background:var(--c)}
   .mo-chip.ev{background:transparent;box-shadow:inset 0 0 0 1.5px var(--c)}
   .mo-more{font-size:10px;padding:0;flex-basis:100%;text-align:center}
-  .mo-dow{padding:6px 2px;text-align:center;font-size:10.5px}
+  .mo-dow{padding:6px 2px;text-align:center;font-size:11px}
+  /* iPhone. Larger type, fingertip sized controls, and nothing that needs sideways scrolling */
+  body{font-size:16px}
+  .wrap{padding-block:10px 112px}
+  .top{padding-block:2px 10px;margin-bottom:6px;gap:8px 12px}
+  .brand h1{font-size:23px}
+  .who{font-size:15px}
+  .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:8px;gap:8px}
+  .bar .nav{flex:none}
+  .bar .right{margin-left:0;flex:1;justify-content:flex-end}
+  .iconbtn{width:42px;height:44px}
+  .btn{min-height:44px}
+  .btn.small{min-height:40px;font-size:14.500px;padding:8px 12px}
+  #nav-today{min-height:44px}
+  .seg button{padding:11px 9px;font-size:15px}
+  #btn-new .long{display:none} #btn-new .short{display:inline}
+  .tagline{font-size:12px} .dl-h small{font-size:13.500px}
+  input[type=text],input[type=date],input[type=password],select,textarea{font-size:16px;min-height:46px}
+  .fld{font-size:14px} .fld > *{font-size:16px}
+  .check{font-size:16px} .check input{width:22px;height:22px}
+  .hint,.empty,.key{font-size:14.500px} .nudge,.msg{font-size:15px}
+  .panel h3{font-size:13px}
+  .tog{padding:10px 6px} .tog .nm{font-size:16px} .tog .sub{font-size:14px} .sw{width:18px;height:18px}
+  .mine-row{padding:10px 6px} .mine-row b{font-size:15.500px} .mine-row span.sub{font-size:14px}
+  .linkbtn{font-size:15px;padding-block:11px}
+  .ag-h{padding:12px;font-size:17px} .ag-h small{font-size:13.500px}
+  .ag-row{grid-template-columns:104px 14px minmax(0,1fr);gap:10px;padding:12px}
+  .ag-row .tm{font-size:14px} .ag-row b{font-size:16px} .ag-row .sub{font-size:14px} .ag-row .sw{width:14px;height:14px}
+  .ag-none{font-size:14.500px;padding:12px}
+  .mo-cell{min-height:68px} .mo-num{font-size:16px;width:30px;height:30px}
+  .fold > summary{pointer-events:auto;cursor:pointer;min-height:44px}
+  .fold-body{margin-top:2px}
+  .fold > summary h3::after{content:"";display:inline-block;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin-left:10px;vertical-align:1px}
+  .fold[open] > summary h3::after{transform:rotate(45deg);vertical-align:3px}
+  #btn-new{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:60;border-radius:999px;padding:14px 20px;font-size:16px;box-shadow:0 6px 20px var(--shade)}
 }
 
 /* dialogs */
-dialog{border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px)}
 dialog.wide{width:min(760px,calc(100vw - 24px))}
 dialog::backdrop{background:var(--shade)}
 .dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
@@ -233,6 +287,11 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
 #gate h1{font-size:1.7rem;color:var(--moss)}
 #gate .gmsg{font-size:.9rem;min-height:1.2em;color:var(--muted)}
 #gate .gmsg.bad{color:var(--clay)}
+@media (max-width:760px){
+  #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 88px);font-size:15px;width:max-content}
+  dialog,dialog.wide{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)} .dlg{padding:18px 16px;gap:16px}
+  .sprow,.calcard{padding:12px}
+}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -261,14 +320,14 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
 
   <div class="grid">
     <aside class="side">
-      <section class="panel" aria-labelledby="h-cals">
-        <div class="panel-h"><h3 id="h-cals">School calendars</h3><span class="tagline"><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.200" width="8" height="5.800" rx="1.400" fill="currentColor"/><path d="M3.900 5.200V3.800a2.100 2.100 0 0 1 4.200 0v1.400" fill="none" stroke="currentColor" stroke-width="1.300"/></svg>View only</span></div>
-        <div class="toggles" id="cal-toggles"><p class="empty">Loading the calendars.</p></div>
-      </section>
-      <section class="panel" aria-labelledby="h-spaces">
-        <div class="panel-h"><h3 id="h-spaces">Spaces</h3><button class="linkbtn" type="button" id="spaces-all" hidden>Show all</button></div>
-        <div class="toggles" id="space-toggles"><p class="empty">Loading the spaces.</p></div>
-      </section>
+      <details class="panel fold" id="fold-cals" open>
+        <summary class="panel-h"><h3 id="h-cals">School calendars</h3><span class="tagline"><svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.200" width="8" height="5.800" rx="1.400" fill="currentColor"/><path d="M3.900 5.200V3.800a2.100 2.100 0 0 1 4.200 0v1.400" fill="none" stroke="currentColor" stroke-width="1.300"/></svg>View only</span></summary>
+        <div class="fold-body"><div class="toggles" id="cal-toggles"><p class="empty">Loading the calendars.</p></div></div>
+      </details>
+      <details class="panel fold" id="fold-spaces" open>
+        <summary class="panel-h"><h3 id="h-spaces">Spaces</h3><span class="tagline" id="spaces-count"></span></summary>
+        <div class="fold-body"><div class="toggles" id="space-toggles"><p class="empty">Loading the spaces.</p></div><button class="linkbtn" type="button" id="spaces-all" hidden>Show every calendar and space</button></div>
+      </details>
       <section class="panel" aria-labelledby="h-mine">
         <h3 id="h-mine">Your sign-ups</h3>
         <div class="mine-list" id="mine-list"><p class="empty">Your upcoming sign-ups will be listed here.</p></div>
@@ -288,7 +347,7 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
         <h2 id="title" aria-live="polite"></h2>
         <div class="right">
           <div class="seg" role="group" aria-label="View"><button type="button" data-view="day" aria-pressed="false">Day</button><button type="button" data-view="week" aria-pressed="false">Week</button><button type="button" data-view="month" aria-pressed="false">Month</button></div>
-          <button class="btn" type="button" id="btn-new"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Sign up for a space</button>
+          <button class="btn" type="button" id="btn-new"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="long">Sign up for a space</span><span class="short">Sign up</span></button>
         </div>
       </div>
       <div class="notice" id="notice" hidden></div>
@@ -308,7 +367,8 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       <label class="fld">From<select id="bk-start"></select></label>
       <label class="fld">To<select id="bk-end"></select></label>
     </div>
-    <label class="fld">What it is for<input type="text" id="bk-what" maxlength="80" placeholder="A group or purpose, like small group clay work"></label>
+    <label class="fld" id="bk-group-wrap">Who it is for<select id="bk-group"></select></label>
+    <label class="fld"><span id="bk-what-label">What you plan to do, optional</span><input type="text" id="bk-what" maxlength="80" placeholder="Like clay work or a story circle"></label>
     <div id="bk-repeat-wrap" style="display:flex;flex-direction:column;gap:10px">
       <label class="check"><input type="checkbox" id="bk-repeat">Repeat every week</label>
       <label class="fld" id="bk-until-wrap" hidden>Last week<input type="date" id="bk-until"></label>
@@ -368,6 +428,12 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
       <h3>Spaces educators can sign up for</h3>
       <div id="set-spaces" style="display:flex;flex-direction:column;gap:10px"></div>
       <div><button class="btn small ghost" type="button" id="set-add-space">Add a space</button></div>
+    </div>
+    <div class="sect">
+      <h3>Classes and small groups</h3>
+      <p class="hint">These fill the Who it is for list on the sign-up form. Each class is offered as a whole class, and each small group by name.</p>
+      <label class="fld">Classes, separated by commas<input type="text" id="set-classes" placeholder="West, North, South"></label>
+      <label class="fld">Small groups, one per line, with the class after a comma<textarea id="set-groups" rows="6" placeholder="Cosmos, West"></textarea></label>
     </div>
     <div class="sect">
       <h3>Hours shown</h3>
@@ -449,6 +515,8 @@ function h(tag, attrs){
 }
 const LOCK = '<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.200" width="8" height="5.800" rx="1.400" fill="currentColor"/><path d="M3.900 5.200V3.800a2.100 2.100 0 0 1 4.200 0v1.400" fill="none" stroke="currentColor" stroke-width="1.300"/></svg>';
 function lock(){ const s=document.createElement("span"); s.style.cssText="display:inline-flex;flex:none"; s.innerHTML=LOCK; return s; }
+function openDlg(d){ if(d.open) return; if(typeof d.showModal==="function") d.showModal(); else { d.setAttribute("open",""); d.classList.add("nomodal"); } }
+function closeDlg(d){ if(typeof d.close==="function") d.close(); else d.removeAttribute("open"); d.classList.remove("nomodal"); }
 let toastTimer=0;
 function toast(t){ const el=$("toast"); el.textContent=t; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ el.hidden=true; }, Math.min(9000, 3500+t.length*45)); }
 function banner(msg, soft){ const b=$("banner"); if(!msg){ b.hidden=true; return; } b.hidden=false; b.className=soft?"soft":""; b.textContent=soft? msg : msg+" The calendar can still be read, but nothing new is saved until this is fixed."; }
@@ -488,11 +556,14 @@ function layout(blocks){
 
 /* ---------- entries ---------- */
 const nameOf = b => b.who || b.by;   // with a shared passcode, who holds the educator's own name
+const forOf = b => [b.group, b.what].filter(Boolean).join(", ");   // the class or small group, then any note
+const firstOf = b => b.group || b.what || nameOf(b);
+const restOf = b => { const first=firstOf(b); return [b.group&&b.what? b.what : "", first===nameOf(b)? "" : nameOf(b)].filter(Boolean).join(", "); };
 const isMine = b => b.by===S.me && (!S.shared || (!!S.who && b.who===S.who));
 const HH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hh")) || 60;
 function describe(t){
   if(t.kind==="event") return t.ev.title+", "+(t.ev.allDay?"all day":span(t.start,t.end))+", "+t.cal.name+", view only";
-  return t.space.name+", "+(t.bk.week?"all week":span(t.start,t.end))+", "+nameOf(t.bk)+(t.bk.what?", "+t.bk.what:"");
+  return t.space.name+", "+(t.bk.week?"all week":span(t.start,t.end))+", "+nameOf(t.bk)+(forOf(t.bk)?", "+forOf(t.bk):"");
 }
 function openEntry(t){ if(t.kind==="event") openEventInfo(t.ev,t.cal); else openBooking(t.bk); }
 function blockEl(t, mode, win){
@@ -506,14 +577,14 @@ function blockEl(t, mode, win){
   const lines=Math.max(1,Math.floor((height*HH()-8)/16.300));   // only as many lines as the entry is tall
   let parts;
   if(t.kind==="event") parts=[h("span",{class:"l1"}, lock(), h("span",{text:t.ev.title})), h("span",{class:"l2",text:span(t.start,t.end)})];
-  else if(mode==="space") parts=[h("span",{class:"l1"}, h("span",{text:t.bk.what||nameOf(t.bk)})), t.bk.what?h("span",{class:"l2",text:nameOf(t.bk)}):null, h("span",{class:"l3",text:span(t.start,t.end)})].filter(Boolean);
-  else parts=[h("span",{class:"l1"}, h("span",{text:t.space.name})), h("span",{class:"l2",text:t.bk.what? t.bk.what+", "+nameOf(t.bk) : nameOf(t.bk)}), h("span",{class:"l3",text:span(t.start,t.end)})];
+  else if(mode==="space") parts=[h("span",{class:"l1"}, h("span",{text:firstOf(t.bk)})), restOf(t.bk)?h("span",{class:"l2",text:restOf(t.bk)}):null, h("span",{class:"l3",text:span(t.start,t.end)})].filter(Boolean);
+  else parts=[h("span",{class:"l1"}, h("span",{text:t.space.name})), h("span",{class:"l2",text:forOf(t.bk)? forOf(t.bk)+", "+nameOf(t.bk) : nameOf(t.bk)}), h("span",{class:"l3",text:span(t.start,t.end)})];
   el.append(...parts.slice(0,lines));
   return el;
 }
 function chipEl(t, mode){
   const cls = t.kind==="event" ? "chipl ev c-"+t.cal.color : "chipl bk c-"+t.space.color+(isMine(t.bk)?" mine":"");
-  const label = t.kind==="event" ? t.ev.title : (mode==="space" ? (t.bk.what? t.bk.what+", "+nameOf(t.bk) : nameOf(t.bk)) : t.space.name+", "+nameOf(t.bk));
+  const label = t.kind==="event" ? t.ev.title : (mode==="space" ? (forOf(t.bk)? forOf(t.bk)+", "+nameOf(t.bk) : nameOf(t.bk)) : t.space.name+", "+(t.bk.group||nameOf(t.bk)));
   return h("button",{type:"button",class:cls,title:describe(t),onclick:e=>{ e.stopPropagation(); openEntry(t); }}, t.kind==="event"?lock():null, h("span",{text:label}));
 }
 
@@ -567,20 +638,45 @@ function renderDay(idx){
   if(!cols.length) return h("p",{class:"empty",style:"padding:28px 16px",text:"Nothing is set to show. Turn a calendar or a space back on in the list."});
   return renderGrid(cols, cols.length>9?124:150);
 }
+function agRow(x){
+  const isEv=x.kind==="event";
+  return h("button",{type:"button",class:"ag-row c-"+(isEv?x.cal.color:x.space.color),onclick:()=>openEntry(x)},
+    h("span",{class:"tm",text: x.start==null? (isEv?"All day":"All week") : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
+    h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (forOf(x.bk)? forOf(x.bk)+", "+nameOf(x.bk) : nameOf(x.bk))})));
+}
+function renderDayList(idx){
+  const d=S.anchor, v=idx.get(d)||{allDay:[],timed:[]}, st=settings(), box=h("div",{});
+  if(st.calendars.some(c=>!S.hiddenCals.has(c.id))){
+    const evs=v.allDay.concat(v.timed).filter(x=>x.kind==="event");
+    box.append(h("div",{class:"dl-h"}, h("span",{text:"School calendars"}), h("small",{text:"View only"})));
+    if(!evs.length) box.append(h("div",{class:"ag-none",text:"Nothing on the school calendars"}));
+    for(const x of evs) box.append(agRow(x));
+  }
+  const spaces=st.spaces.filter(x=>x.byWeek).concat(st.spaces.filter(x=>!x.byWeek)).filter(sp=>!S.hiddenSpaces.has(sp.id));
+  box.append(h("div",{class:"dl-h"}, h("span",{text:"Spaces"}), h("small",{text:spaces.length? "Free unless a sign-up is listed" : ""})));
+  if(!spaces.length) box.append(h("div",{class:"ag-none",text:st.spaces.length? "Every space is hidden. Turn some back on under Spaces below." : "No spaces are set up yet."}));
+  for(const sp of spaces){
+    const rows=v.allDay.concat(v.timed).filter(x=>x.kind==="booking"&&x.space.id===sp.id);
+    const status= sp.hidden? "Sign-ups are closed" : rows.length? (sp.note||"") : (sp.byWeek? "Free this week" : "Free all day");
+    box.append(h("div",{class:"dl-space c-"+sp.color}, h("span",{class:"sw"}), h("span",{class:"dl-name"}, h("b",{text:sp.name}), status? h("span",{class:"sub",text:status}) : null),
+      sp.hidden? null : h("button",{type:"button",class:"btn small ghost","aria-label":"Sign up for "+sp.name,text:"Sign up",onclick:()=>openBookDialog({date:d,spaceId:sp.id})})));
+    for(const x of rows) box.append(h("button",{type:"button",class:"dl-row c-"+sp.color+(isMine(x.bk)?" mine":""),onclick:()=>openEntry(x)},
+      h("span",{class:"tm",text:x.start==null? "All week" : span(x.start,x.end)}), h("span",{}, h("b",{text:firstOf(x.bk)}), restOf(x.bk)? h("span",{class:"sub",text:restOf(x.bk)}) : null)));
+  }
+  return box;
+}
 function renderAgenda(idx){
   const t=today(), box=h("div",{});
+  const weekLong=new Map();
+  for(const d of weekDays(S.anchor)) for(const x of (idx.get(d)||{allDay:[]}).allDay) if(x.kind==="booking") weekLong.set(x.bk.id,x);
+  if(weekLong.size){ box.append(h("div",{class:"dl-h"}, h("span",{text:"All week"}), h("small",{text:"Monday to Friday"}))); for(const x of weekLong.values()) box.append(agRow(x)); }
   for(const d of weekDays(S.anchor)){
     const v=idx.get(d)||{allDay:[],timed:[]};
     const day=h("div",{class:"ag-day"});
     day.append(h("button",{type:"button",class:"ag-h"+(d===t?" today":""),onclick:()=>go("day",d)}, h("span",{text:fmt(d,{weekday:"long",month:"short",day:"numeric"})+(d===t?", today":"")}), h("small",{text:"Open day"})));
-    const rows=v.allDay.concat(v.timed);
+    const rows=v.allDay.filter(x=>x.kind==="event").concat(v.timed);
     if(!rows.length) day.append(h("div",{class:"ag-none",text:"Nothing scheduled"}));
-    for(const x of rows){
-      const isEv=x.kind==="event";
-      day.append(h("button",{type:"button",class:"ag-row c-"+(isEv?x.cal.color:x.space.color),onclick:()=>openEntry(x)},
-        h("span",{class:"tm",text: x.start==null? (x.kind==="booking"?"All week":"All day") : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
-        h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (x.bk.what? x.bk.what+", "+nameOf(x.bk) : nameOf(x.bk))}))));
-    }
+    for(const x of rows) day.append(agRow(x));
     box.append(day);
   }
   return box;
@@ -633,12 +729,14 @@ function renderSide(){
   }
   const anyHidden=st.spaces.some(s=>S.hiddenSpaces.has(s.id))||st.calendars.some(c=>S.hiddenCals.has(c.id));
   $("spaces-all").hidden=!anyHidden;
+  const shown=st.spaces.filter(s=>!S.hiddenSpaces.has(s.id)).length;
+  $("spaces-count").textContent= st.spaces.length? (shown===st.spaces.length? st.spaces.length+" showing" : shown+" of "+st.spaces.length+" showing") : "";
 
   const mine=$("mine-list"); mine.textContent="";
   const list=(S.data&&S.data.mine)||[]; const byId=new Map(st.spaces.map(s=>[s.id,s]));
   if(!list.length) mine.append(h("p",{class:"empty",text:S.shared&&!S.who? "Your sign-ups will be listed here after your first one." : "You have no upcoming sign-ups."}));
   for(const b of list){ const space=byId.get(b.spaceId); if(!space) continue;
-    mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(b.what?", "+b.what:"")}), h("span",{class:"sub",text:(b.week? weekLabel(b.date) : fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end))+(b.seriesId?", weekly":"")}))));
+    mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(forOf(b)?", "+forOf(b):"")}), h("span",{class:"sub",text:(b.week? weekLabel(b.date) : fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end))+(b.seriesId?", weekly":"")}))));
   }
 }
 
@@ -671,7 +769,7 @@ function render(){
   const idx=buildIndex();
   let body;
   if(S.view==="month") body=renderMonth(idx);
-  else if(S.view==="day") body=renderDay(idx);
+  else if(S.view==="day") body = narrow.matches ? renderDayList(idx) : renderDay(idx);
   else body = narrow.matches ? renderAgenda(idx) : renderWeek(idx);
   const keep=cal.querySelector(".tg-scroll"); const sx=keep?keep.scrollLeft:0;
   cal.textContent=""; cal.append(body);
@@ -702,8 +800,23 @@ function step(dir){
 /* ---------- sign-up dialog ---------- */
 const Bk={edit:null, armed:null};
 function timeOptions(sel, lo, hi, value){ sel.textContent=""; for(let m=lo;m<=hi;m+=15) sel.append(h("option",{value:String(m),text:clock(m)})); if(value!=null && ![...sel.options].some(o=>Number(o.value)===value)){ sel.append(h("option",{value:String(value),text:clock(value)})); } if(value!=null) sel.value=String(value); }
+// The choices for who a sign-up is for, built from the classes and small groups in Settings
+function groupOptions(sel, current){
+  const st=settings(), classes=st.classes||[], groups=st.groups||[]; sel.textContent="";
+  const wrap=$("bk-group-wrap"); wrap.hidden=!(classes.length||groups.length);
+  $("bk-what-label").textContent=wrap.hidden? "What it is for" : "What you plan to do, optional";
+  if(wrap.hidden) return;
+  sel.append(h("option",{value:"",text:"Choose a class or small group"}));
+  const known=new Set();
+  const add=(parent,label)=>{ known.add(label); parent.append(h("option",{value:label,text:label})); };
+  if(classes.length){ const g=h("optgroup",{label:"Whole class"}); for(const c of classes) add(g,c+", whole class"); if(classes.length>1) add(g,"All classes together"); sel.append(g); }
+  if(groups.length){ const g=h("optgroup",{label:"Small group"}); for(const x of groups) add(g,x.name+(x.room?", "+x.room:"")); sel.append(g); }
+  if(current && !known.has(current)) sel.append(h("option",{value:current,text:current}));   // a choice saved before the lists changed
+  sel.append(h("option",{value:"__other",text:"Something else"}));
+  sel.value = current || "";
+}
 function bkSpace(){ return settings().spaces.find(s=>s.id===$("bk-space").value); }
-function bkValues(){ const week=!!(bkSpace()||{}).byWeek; return { spaceId:$("bk-space").value, date:$("bk-date").value, start:week?0:Number($("bk-start").value), end:week?1440:Number($("bk-end").value), what:$("bk-what").value.trim(), ...($("bk-who-wrap").hidden? {} : {who:$("bk-who").value.trim()}) }; }
+function bkValues(){ const week=!!(bkSpace()||{}).byWeek; return { spaceId:$("bk-space").value, date:$("bk-date").value, start:week?0:Number($("bk-start").value), end:week?1440:Number($("bk-end").value), what:$("bk-what").value.trim(), ...($("bk-group-wrap").hidden? {} : {group: $("bk-group").value==="__other"? "" : $("bk-group").value}), ...($("bk-who-wrap").hidden? {} : {who:$("bk-who").value.trim()}) }; }
 function bkHint(){
   const v=bkValues(), st=settings(), space=st.spaces.find(s=>s.id===v.spaceId), box=$("bk-avail");
   const week=!!(space&&space.byWeek);
@@ -746,6 +859,7 @@ function openBookDialog(opts){
   timeOptions($("bk-start"),lo,hi-15,start); timeOptions($("bk-end"),lo+15,hi,end);
   $("bk-date").value = edit? edit.date : (opts.date || (S.view==="day"? S.anchor : (S.anchor<today()? S.anchor : today())));
   $("bk-what").value = edit? (edit.what||"") : "";
+  groupOptions($("bk-group"), edit? (edit.group || "__other") : "");
   $("bk-repeat").checked=false; $("bk-until-wrap").hidden=true; $("bk-until").value="";
   $("bk-repeat-wrap").hidden=!!edit;
   $("bk-title").textContent= edit? "Change a sign-up" : "Sign up for a space";
@@ -756,12 +870,12 @@ function openBookDialog(opts){
   const by=$("bk-by"); by.hidden=!(edit&&!askName&&edit.by!==S.me); by.textContent= edit? "Signed up by "+nameOf(edit)+"." : "";
   $("bk-msg").textContent=""; $("bk-save").disabled=false;
   bkHint();
-  const d=$("dlg-book"); if(!d.open) d.showModal();
+  const d=$("dlg-book"); openDlg(d);
 }
 function openBooking(b){
   if(S.director || b.by===S.me){ openBookDialog({edit:b}); return; }
   const space=settings().spaces.find(s=>s.id===b.spaceId);
-  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",(b.week? "Week of "+fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\nMonday to Friday" : fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end))+(b.seriesId?", weekly":"")],["Who",nameOf(b)],b.what?["For",b.what]:null], note:"Only "+nameOf(b)+" or the director can change this sign-up." });
+  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.group?", "+b.group:""), rows:[["When",(b.week? "Week of "+fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\nMonday to Friday" : fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end))+(b.seriesId?", weekly":"")],["Who",nameOf(b)],forOf(b)?["For",forOf(b)]:null], note:"Only "+nameOf(b)+" or the director can change this sign-up." });
 }
 function openEventInfo(e, cal){
   let when;
@@ -774,12 +888,13 @@ function showInfo(o){
   const tag=$("info-tag"); tag.textContent=""; if(o.locked) tag.append(lock()); tag.append(o.tag);
   $("info-title").textContent=o.title; $("info-note").textContent=o.note||"";
   const rows=$("info-rows"); rows.textContent=""; for(const r of o.rows) if(r) rows.append(h("dt",{text:r[0]}),h("dd",{text:r[1]}));
-  const d=$("dlg-info"); if(!d.open) d.showModal();
+  const d=$("dlg-info"); openDlg(d);
 }
 async function saveBooking(e){
   e.preventDefault(); const v=bkValues(), msg=$("bk-msg"), btn=$("bk-save"); msg.textContent="";
   if(v.who==="" ){ msg.textContent="Add your name so everyone can see who has the space."; $("bk-who").focus(); return; }
   if(!v.spaceId){ msg.textContent="Choose a space."; return; }
+  if(!$("bk-group-wrap").hidden && $("bk-group").value===""){ msg.textContent="Choose who it is for."; $("bk-group").focus(); return; }
   if(!v.date){ msg.textContent="Choose a date."; return; }
   if(v.end<=v.start){ msg.textContent="The end time needs to be after the start time."; return; }
   const repeat=!Bk.edit && $("bk-repeat").checked;
@@ -795,14 +910,14 @@ async function saveBooking(e){
       else if(r.made.length===1 && !r.skipped.length) toast("You are signed up for "+name+", "+fmt(v.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(v.start,v.end)+".");
       else toast("You are signed up for "+name+" for "+r.made.length+(r.made.length===1?" week":" weeks")+"."+(r.skipped.length? " Skipped "+r.skipped.map(s=>fmt(s.date,{month:"short",day:"numeric"})+" ("+s.by+" has it)").join(", ")+"." : ""));
     }
-    $("dlg-book").close(); S.anchor = S.view==="month"? S.anchor : v.date; await refresh(true);
+    closeDlg($("dlg-book")); S.anchor = S.view==="month"? S.anchor : v.date; await refresh(true);
   }catch(err){ msg.textContent=err.message||"That could not be saved. Try again."; btn.disabled=false; }
 }
 async function removeBooking(scope, btn){
   if(!Bk.edit) return;
   if(Bk.armed!==scope){ disarm(); Bk.armed=scope; btn.textContent="Choose again to remove"; setTimeout(()=>{ if(Bk.armed===scope) disarm(); },5000); return; }
   btn.disabled=true;
-  try{ const r=await api("/api/booking/remove",{id:Bk.edit.id,scope}); $("dlg-book").close(); toast(r.removed.length>1? r.removed.length+" sign-ups removed." : "Sign-up removed."); await refresh(true); }
+  try{ const r=await api("/api/booking/remove",{id:Bk.edit.id,scope}); closeDlg($("dlg-book")); toast(r.removed.length>1? r.removed.length+" sign-ups removed." : "Sign-up removed."); await refresh(true); }
   catch(err){ $("bk-msg").textContent=err.message||"That could not be removed. Try again."; }
   btn.disabled=false; disarm();
 }
@@ -811,8 +926,8 @@ async function removeBooking(scope, btn){
 const COLOR_NAMES={moss:"Moss",sky:"Sky",marigold:"Marigold",clay:"Clay",plum:"Plum",teal:"Teal",rose:"Rose",slate:"Slate"};
 let Draft=null;
 function colorSelect(value, onchange){ const s=h("select",{"aria-label":"Color",onchange:e=>onchange(e.target.value)}); for(const [k,n] of Object.entries(COLOR_NAMES)) s.append(h("option",{value:k,text:n})); s.value=value; return s; }
-function cloneSettings(){ const st=settings(); return { calendars:st.calendars.map(c=>Object.assign({},c)), spaces:st.spaces.map(s=>Object.assign({},s)), dayStart:st.dayStart, dayEnd:st.dayEnd, weekends:st.weekends!==false }; }
-function programFromDraft(){ return { calendars:Draft.calendars.map(c=>({id:c.id,name:c.name,color:c.color})), spaces:Draft.spaces.filter(s=>(s.name||"").trim()).map(s=>({id:s.id,name:s.name,color:s.color,note:s.note||"",shared:!!s.shared,hidden:!!s.hidden,byWeek:!!s.byWeek})), dayStart:Draft.dayStart, dayEnd:Draft.dayEnd, weekends:Draft.weekends }; }
+function cloneSettings(){ const st=settings(); return { calendars:st.calendars.map(c=>Object.assign({},c)), spaces:st.spaces.map(s=>Object.assign({},s)), dayStart:st.dayStart, dayEnd:st.dayEnd, weekends:st.weekends!==false, classes:(st.classes||[]).slice(), groups:(st.groups||[]).map(g=>Object.assign({},g)) }; }
+function programFromDraft(){ return { calendars:Draft.calendars.map(c=>({id:c.id,name:c.name,color:c.color})), spaces:Draft.spaces.filter(s=>(s.name||"").trim()).map(s=>({id:s.id,name:s.name,color:s.color,note:s.note||"",shared:!!s.shared,hidden:!!s.hidden,byWeek:!!s.byWeek})), dayStart:Draft.dayStart, dayEnd:Draft.dayEnd, weekends:Draft.weekends, classes:Draft.classes, groups:Draft.groups }; }
 function renderSettings(){
   const status=(S.data&&S.data.calendarStatus)||{};
   const cals=$("set-cals"); cals.textContent="";
@@ -854,9 +969,10 @@ function renderSettings(){
   for(let m=0;m<=1320;m+=60) a.append(h("option",{value:String(m),text:hourLabel(m)}));
   for(let m=120;m<=1440;m+=60) b.append(h("option",{value:String(m),text:m===1440?"12 am, midnight":hourLabel(m)}));
   a.value=String(Draft.dayStart); b.value=String(Draft.dayEnd); $("set-weekends").checked=Draft.weekends;
+  $("set-classes").value=(Draft.classes||[]).join(", "); $("set-groups").value=(Draft.groups||[]).map(g=>g.name+(g.room?", "+g.room:"")).join("\n");
 }
 function nextColor(list){ const used=new Set(list.map(x=>x.color)); return Object.keys(COLOR_NAMES).find(c=>!used.has(c)) || "moss"; }
-function openSettings(){ if(!S.director||!S.data) return; Draft=cloneSettings(); CalMsg.i=-1; CalMsg.text=""; $("set-msg").textContent=""; renderSettings(); const d=$("dlg-set"); if(!d.open) d.showModal(); }
+function openSettings(){ if(!S.director||!S.data) return; Draft=cloneSettings(); CalMsg.i=-1; CalMsg.text=""; $("set-msg").textContent=""; renderSettings(); const d=$("dlg-set"); openDlg(d); }
 async function saveSettings(quiet){
   const msg=$("set-msg"); msg.textContent="";
   if(Draft.dayEnd-Draft.dayStart<120){ msg.textContent="The hours shown need to cover at least two hours."; return false; }
@@ -865,7 +981,7 @@ async function saveSettings(quiet){
     const r=await api("/api/settings",{program:programFromDraft()});
     if(S.data) S.data.settings=r.settings; S.stamp="";
     Draft=cloneSettings(); renderSettings();
-    if(!quiet){ $("dlg-set").close(); toast("Settings saved."); }
+    if(!quiet){ closeDlg($("dlg-set")); toast("Settings saved."); }
     await refresh(true); return true;
   }catch(err){ msg.textContent=err.message||"The settings could not be saved. Try again."; return false; }
   finally{ $("set-save").disabled=false; }
@@ -904,21 +1020,24 @@ function wire(){
   $("btn-settings").onclick=openSettings; $("btn-signout").onclick=signOut;
   $("spaces-all").onclick=()=>{ S.hiddenCals.clear(); S.hiddenSpaces.clear(); saveHidden(); render(); };
   $("bk-form").addEventListener("submit",saveBooking);
-  $("bk-cancel").onclick=()=>$("dlg-book").close();
+  $("bk-cancel").onclick=()=>closeDlg($("dlg-book"));
   $("bk-remove").onclick=e=>removeBooking("one",e.currentTarget); $("bk-remove-all").onclick=e=>removeBooking("following",e.currentTarget);
   ["bk-space","bk-date","bk-end"].forEach(id=>$(id).addEventListener("change",bkHint));
   $("bk-start").addEventListener("change",()=>{ const s=Number($("bk-start").value), e=Number($("bk-end").value), len=Bk.len||60; if(e<=s){ const sel=$("bk-end"); const want=Math.min(s+len, Number(sel.options[sel.options.length-1].value)); sel.value=String(want); if(Number(sel.value)<=s) sel.value=sel.options[sel.options.length-1].value; } bkHint(); });
   $("bk-end").addEventListener("change",()=>{ const len=Number($("bk-end").value)-Number($("bk-start").value); if(len>0) Bk.len=len; });
   $("bk-repeat").addEventListener("change",e=>{ $("bk-until-wrap").hidden=!e.target.checked; if(e.target.checked && !$("bk-until").value && $("bk-date").value) $("bk-until").value=addDays($("bk-date").value,7*7); });
-  $("info-close").onclick=()=>$("dlg-info").close();
+  $("info-close").onclick=()=>closeDlg($("dlg-info"));
   $("set-form").addEventListener("submit",e=>{ e.preventDefault(); saveSettings(false); });
-  $("set-close").onclick=()=>$("dlg-set").close();
+  $("set-close").onclick=()=>closeDlg($("dlg-set"));
   $("set-add-cal").onclick=()=>{ Draft.calendars.push({name:"",color:nextColor(Draft.calendars.concat(Draft.spaces))}); renderSettings(); const el=$("set-cal-name-"+(Draft.calendars.length-1)); if(el) el.focus(); };
   $("set-add-space").onclick=()=>{ Draft.spaces.push({name:"",color:nextColor(Draft.spaces.concat(Draft.calendars)),note:"",shared:false,hidden:false,byWeek:false}); renderSettings(); const el=$("set-sp-name-"+(Draft.spaces.length-1)); if(el) el.focus(); };
   $("set-start").addEventListener("change",e=>{ Draft.dayStart=Number(e.target.value); }); $("set-end").addEventListener("change",e=>{ Draft.dayEnd=Number(e.target.value); });
   $("set-weekends").addEventListener("change",e=>{ Draft.weekends=e.target.checked; });
-  document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{ if(e.target===d) d.close(); }));   // a click on the dimmed area closes
-  narrow.addEventListener("change",render);
+  $("set-classes").addEventListener("input",e=>{ Draft.classes=e.target.value.split(",").map(x=>x.trim()).filter(Boolean); });
+  $("set-groups").addEventListener("input",e=>{ Draft.groups=e.target.value.split("\n").map(line=>{ const i=line.lastIndexOf(","); return i<0? {name:line.trim(),room:""} : {name:line.slice(0,i).trim(),room:line.slice(i+1).trim()}; }).filter(g=>g.name); });
+  document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{ if(e.target===d) closeDlg(d); }));   // a click on the dimmed area closes
+  const folds=()=>{ for(const id of ["fold-cals","fold-spaces"]) $(id).open=!narrow.matches; };   // open on a computer, tucked away on a phone
+  folds(); narrow.addEventListener("change",()=>{ folds(); render(); });
   document.addEventListener("keydown",e=>{ if(e.target.closest("input,select,textarea,dialog")) return; if(e.key==="ArrowLeft") step(-1); else if(e.key==="ArrowRight") step(1); });
 }
 /* stop checking for changes after 10 quiet minutes, so a forgotten open tab lets the free server sleep */

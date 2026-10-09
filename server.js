@@ -337,7 +337,7 @@ function loadFeed(calId) {
     if (feeds.get(calId) !== f) return f;   // disconnected or replaced while loading
     const before = f.hash + '|' + f.error;
     f.fetchedAt = Date.now(); f.error = error;
-    if (parsed) { f.parsed = parsed; f.hash = hash; adoptName(calId, parsed.name); }
+    if (parsed) { if (hash !== f.hash) log('Calendar', calId, 'read,', parsed.events.length, 'entries'); f.parsed = parsed; f.hash = hash; adoptName(calId, parsed.name); }
     if (f.hash + '|' + f.error !== before) { feedRev++; viewCache.clear(); }
     if (error) log('Calendar', calId, 'problem.', error);
     return f;

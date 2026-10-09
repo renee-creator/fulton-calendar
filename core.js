@@ -23,6 +23,9 @@
     const out = { calendars: [], spaces: [], dayStart: d.dayStart, dayEnd: d.dayEnd, weekends: p.weekends !== false };
     for (const c of Array.isArray(p.calendars) ? p.calendars : d.calendars) if (c && /^[a-z0-9]{3,16}$/.test(c.id || '')) out.calendars.push({ id: c.id, name: text(c.name, 40) || 'Calendar', color: COLORS.includes(c.color) ? c.color : 'sky' });
     for (const s of Array.isArray(p.spaces) ? p.spaces : []) if (s && /^[a-z0-9]{3,16}$/.test(s.id || '') && text(s.name, 40)) out.spaces.push({ id: s.id, name: text(s.name, 40), color: COLORS.includes(s.color) ? s.color : 'moss', note: text(s.note, 120), shared: !!s.shared, hidden: !!s.hidden, byWeek: !!s.byWeek });
+    // who a sign-up can be for. Kept in settings so the program can change them, never built into the app
+    out.classes = (Array.isArray(p.classes) ? p.classes : []).map(c => text(c, 30)).filter(Boolean).slice(0, 12);
+    out.groups = (Array.isArray(p.groups) ? p.groups : []).map(g => ({ name: text(g && g.name, 40), room: text(g && g.room, 30) })).filter(g => g.name).slice(0, 60);
     if (Number.isInteger(p.dayStart) && Number.isInteger(p.dayEnd) && p.dayStart >= 0 && p.dayEnd <= 1440 && p.dayEnd - p.dayStart >= 120) { out.dayStart = p.dayStart; out.dayEnd = p.dayEnd; }
     return out;
   }
@@ -69,7 +72,7 @@
       checkDate(input.date);
       const first = week ? mondayOf(input.date) : input.date, start = week ? 0 : input.start, end = week ? 1440 : input.end;
       checkTimes(start, end);
-      const what = text(input.what, 80), who = text(input.who, 40);
+      const what = text(input.what, 80), who = text(input.who, 40), group = text(input.group, 60);
       if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const dates = [first];
       if (input.repeatUntil) {
@@ -87,6 +90,7 @@
         const b = { id: newId(), spaceId: space.id, date: p.date, start, end, by: ctx.name, what, createdAt: Date.now() };
         if (week) b.week = true;
         if (who) b.who = who;
+        if (group) b.group = group;
         if (seriesId) b.seriesId = seriesId;
         put(b); made.push(b); months.add(b.date.slice(0, 7));
       }
@@ -100,6 +104,7 @@
       if (!mayChange(ctx, b)) throw fail(403, 'Only ' + nameOf(b) + ' or the director can change this sign-up.');
       const next = { spaceId: patch.spaceId != null ? patch.spaceId : b.spaceId, date: patch.date != null ? patch.date : b.date, start: patch.start != null ? patch.start : b.start, end: patch.end != null ? patch.end : b.end, what: patch.what != null ? text(patch.what, 80) : b.what };
       const who = patch.who != null ? text(patch.who, 40) : (b.who || '');
+      const group = patch.group != null ? text(patch.group, 60) : (b.group || '');
       if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
       const space = spaceFor(next.spaceId);
       if (!space) throw fail(400, 'Choose a space.');
@@ -111,7 +116,7 @@
       const clash = space.shared ? null : clashFor(space.id, next.date, next.start, next.end, b.id);
       if (clash) throw fail(409, takenLine(space, clash));
       const oldMonth = b.date.slice(0, 7);
-      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; if (week) b.week = true; else delete b.week; put(b);
+      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; if (group) b.group = group; else delete b.group; if (week) b.week = true; else delete b.week; put(b);
       onBooking(oldMonth, ctx.name); if (b.date.slice(0, 7) !== oldMonth) onBooking(b.date.slice(0, 7), ctx.name);
       return { booking: b };
     }
@@ -140,7 +145,7 @@
       const names = named.map(s => text(s.name, 40).toLowerCase());
       if (new Set(names).size !== names.length) throw fail(400, 'Two spaces have the same name. Give each space its own name.');
       if (!Number.isInteger(input.dayStart) || !Number.isInteger(input.dayEnd) || input.dayEnd - input.dayStart < 120) throw fail(400, 'The hours shown need to cover at least two hours.');
-      const next = cleanProgram({ calendars: fix(cals), spaces: named, dayStart: input.dayStart, dayEnd: input.dayEnd, weekends: input.weekends });
+      const next = cleanProgram({ calendars: fix(cals), spaces: named, dayStart: input.dayStart, dayEnd: input.dayEnd, weekends: input.weekends, classes: input.classes, groups: input.groups });
       const t = today();
       for (const s of program.spaces) if (!next.spaces.some(n => n.id === s.id)) {
         const n = [...byId.values()].filter(b => b.spaceId === s.id && lastDay(b) >= t).length;
