@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
 <style>
 /* Layout. The school's wall calendar. A narrow column of what is showing on the left, the calendar itself on the right.
-   Filled entries are space sign-ups educators manage. Outlined entries come from Google Calendar and are view only. */
+   Filled entries are space sign-ups educators manage. Outlined entries come from the school's connected calendars and are view only. */
 :root{
   --bg:#f3f5ef; --paper:#fffffb; --ink:#22332a; --muted:#5d6e63; --line:#d5ddd2; --line-soft:#e6ebe3;
   --moss:#2f5a43; --moss-soft:#e3ece4; --marigold:#c47a06; --marigold-soft:#fbefd8;
@@ -148,6 +148,8 @@ button.tg-head:hover{background:var(--bg)}
 .blk:hover,.chipl:hover{filter:brightness(.97);z-index:4}
 .chipl{border-radius:6px;padding:2px 6px;font-size:12.5px;text-align:left;display:flex;gap:5px;align-items:center;min-width:0;width:100%}
 .chipl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chipl.bk{line-height:1.25;padding-block:3px}
+.chipl.bk span{white-space:normal;overflow-wrap:anywhere}
 
 /* month */
 .mo{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}
@@ -272,7 +274,7 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
         <div class="mine-list" id="mine-list"><p class="empty">Your upcoming sign-ups will be listed here.</p></div>
       </section>
       <section class="panel">
-        <div class="key"><i class="f"></i><span>Filled entries are space sign-ups</span><i class="o"></i><span>Outlined entries come from Google Calendar and cannot be changed here</span></div>
+        <div class="key"><i class="f"></i><span>Filled entries are space sign-ups</span><i class="o"></i><span>Outlined entries come from the school calendars and cannot be changed here</span></div>
       </section>
     </aside>
 
@@ -301,8 +303,8 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
     <label class="fld" id="bk-who-wrap" hidden>Your name<input type="text" id="bk-who" maxlength="40" autocomplete="given-name" placeholder="So everyone can see who has the space"></label>
     <label class="fld">Space<select id="bk-space"></select></label>
     <p class="hint" id="bk-space-note" hidden></p>
-    <label class="fld">Date<input type="date" id="bk-date" required></label>
-    <div class="two">
+    <label class="fld"><span id="bk-date-label">Date</span><input type="date" id="bk-date" required></label>
+    <div class="two" id="bk-times">
       <label class="fld">From<select id="bk-start"></select></label>
       <label class="fld">To<select id="bk-end"></select></label>
     </div>
@@ -338,11 +340,11 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
     <h2 id="set-title">Settings</h2>
     <p class="hint">Only the director sees this page.</p>
     <div class="sect">
-      <h3>School calendars from Google</h3>
-      <p class="hint">These show for everyone as view only. Nothing here can change a Google calendar. Keep adding and editing events in Google Calendar as usual, and they appear here within about ten minutes.</p>
+      <h3>School calendars, view only</h3>
+      <p class="hint">These show for everyone as view only. Nothing here can change them. Keep adding and editing events in Google Calendar or SignUpGenius as usual, and they appear here within about ten minutes.</p>
       <div id="set-cals" style="display:flex;flex-direction:column;gap:10px"></div>
       <div><button class="btn small ghost" type="button" id="set-add-cal">Add a calendar</button></div>
-      <details class="how"><summary>Where to find a calendar's address</summary>
+      <details class="how"><summary>Where to find a Google calendar's address</summary>
         <ol>
           <li>On a computer, open Google Calendar.</li>
           <li>In the left column, point at the calendar's name, choose the three dots, then Settings and sharing.</li>
@@ -350,6 +352,16 @@ details.how ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
           <li>Paste it into the address box here and choose Connect.</li>
         </ol>
         <p style="margin-top:8px">Anyone holding a secret address can read that calendar, so it is kept on the server and never shown to educators. If your Google account does not offer a secret address, make the calendar public and paste the Public address in iCal format instead.</p>
+      </details>
+      <details class="how"><summary>Showing SignUpGenius sign ups, such as conferences</summary>
+        <ol>
+          <li>In SignUpGenius, open the Sign Ups page, choose Tools on the left, then Calendar Subscriptions. This needs a paid SignUpGenius plan.</li>
+          <li>Choose Create iCal Feed, give it a title, and add the conference sign ups, up to five.</li>
+          <li>Choose whether to include filled slots, unfilled slots, or both, then Save.</li>
+          <li>On the feed, choose the calendar icon, then Calendar Help, and copy the webcal link.</li>
+          <li>Here, choose Add a calendar, name it, paste the link in its address box, and choose Connect.</li>
+        </ol>
+        <p style="margin-top:8px">Families keep signing up in SignUpGenius. Fulton Calendar only shows what is there.</p>
       </details>
     </div>
     <div class="sect">
@@ -403,6 +415,8 @@ const dayNum = s => { const p=s.split("-").map(Number); return Math.round(Date.U
 const fromDayNum = n => new Date(n*864e5).toISOString().slice(0,10);
 const addDays = (s,n) => fromDayNum(dayNum(s)+n);
 const dow = s => new Date(dayNum(s)*864e5).getUTCDay();
+const mondayOf = s => addDays(s, -((dow(s)+6)%7));
+const weekLabel = monday => "Week of "+fmt(monday,{weekday:"short",month:"short",day:"numeric"});
 const fmt = (s,o) => new Date(dayNum(s)*864e5).toLocaleDateString("en-US",Object.assign({timeZone:"UTC"},o));
 const localToday = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 function clock(min){ const h=Math.floor(min/60), m=min%60, h12=h%12===0?12:h%12; return h12+":"+String(m).padStart(2,"0")+(h>=12&&h<24?" pm":" am"); }
@@ -455,7 +469,9 @@ function buildIndex(){
       if(s===0&&en===1440) get(d).allDay.push({kind:"event",ev:e,cal}); else get(d).timed.push({kind:"event",ev:e,cal,start:s,end:en});
     }
   }
-  for(const b of D.bookings||[]){ const sp=spaces.get(b.spaceId); if(!sp||S.hiddenSpaces.has(sp.id)) continue; get(b.date).timed.push({kind:"booking",bk:b,space:sp,start:b.start,end:b.end}); }
+  for(const b of D.bookings||[]){ const sp=spaces.get(b.spaceId); if(!sp||S.hiddenSpaces.has(sp.id)) continue;
+    if(b.week){ for(let i=0;i<5;i++){ const d=addDays(b.date,i); if(d>=from&&d<=to) get(d).allDay.push({kind:"booking",bk:b,space:sp}); } continue; }   // a week-long sign-up shows Monday to Friday
+    get(b.date).timed.push({kind:"booking",bk:b,space:sp,start:b.start,end:b.end}); }
   for(const v of idx.values()) v.timed.sort((a,b)=>a.start-b.start||b.end-a.end);
   return idx;
 }
@@ -476,7 +492,7 @@ const isMine = b => b.by===S.me && (!S.shared || (!!S.who && b.who===S.who));
 const HH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hh")) || 60;
 function describe(t){
   if(t.kind==="event") return t.ev.title+", "+(t.ev.allDay?"all day":span(t.start,t.end))+", "+t.cal.name+", view only";
-  return t.space.name+", "+span(t.start,t.end)+", "+nameOf(t.bk)+(t.bk.what?", "+t.bk.what:"");
+  return t.space.name+", "+(t.bk.week?"all week":span(t.start,t.end))+", "+nameOf(t.bk)+(t.bk.what?", "+t.bk.what:"");
 }
 function openEntry(t){ if(t.kind==="event") openEventInfo(t.ev,t.cal); else openBooking(t.bk); }
 function blockEl(t, mode, win){
@@ -495,9 +511,10 @@ function blockEl(t, mode, win){
   el.append(...parts.slice(0,lines));
   return el;
 }
-function chipEl(t){
-  const cls = t.kind==="event" ? "chipl ev c-"+t.cal.color : "chipl bk c-"+t.space.color;
-  return h("button",{type:"button",class:cls,title:describe(t),onclick:e=>{ e.stopPropagation(); openEntry(t); }}, t.kind==="event"?lock():null, h("span",{text:t.kind==="event"?t.ev.title:t.space.name}));
+function chipEl(t, mode){
+  const cls = t.kind==="event" ? "chipl ev c-"+t.cal.color : "chipl bk c-"+t.space.color+(isMine(t.bk)?" mine":"");
+  const label = t.kind==="event" ? t.ev.title : (mode==="space" ? (t.bk.what? t.bk.what+", "+nameOf(t.bk) : nameOf(t.bk)) : t.space.name+", "+nameOf(t.bk));
+  return h("button",{type:"button",class:cls,title:describe(t),onclick:e=>{ e.stopPropagation(); openEntry(t); }}, t.kind==="event"?lock():null, h("span",{text:label}));
 }
 
 /* ---------- time grid for week and day ---------- */
@@ -510,7 +527,7 @@ function renderGrid(cols, colMin){
   for(const c of cols) tg.append(c.head);
   if(cols.some(c=>c.allDay.length)){
     tg.append(h("div",{class:"tg-gut all",text:"All day"}));
-    for(const c of cols){ const cell=h("div",{class:"tg-all"}); for(const t of c.allDay) cell.append(chipEl(t)); tg.append(cell); }
+    for(const c of cols){ const cell=h("div",{class:"tg-all"}); for(const t of c.allDay) cell.append(chipEl(t,c.mode)); tg.append(cell); }
   }
   const gut=h("div",{class:"tg-gut hours"});
   for(let m=lo;m<hi;m+=60) gut.append(h("span",{style:`top:calc(${(m-lo)/60} * var(--hh))`,text:hourLabel(m)}));
@@ -540,14 +557,15 @@ function renderDay(idx){
   const cols=[];
   if(st.calendars.length){
     const head=h("div",{class:"tg-head"}, h("span",{class:"d3"},h("span",{text:"School calendars"})), h("span",{class:"note"}, "View only"));
-    cols.push({head, allDay:v.allDay, timed:v.timed.filter(x=>x.kind==="event"), mode:"space", showNow:d===t});
+    cols.push({head, allDay:v.allDay.filter(x=>x.kind==="event"), timed:v.timed.filter(x=>x.kind==="event"), mode:"space", showNow:d===t});
   }
-  for(const sp of st.spaces){ if(S.hiddenSpaces.has(sp.id)) continue;
-    const head=h("div",{class:"tg-head c-"+sp.color}, h("span",{class:"d3"}, h("span",{class:"sw"}), h("span",{text:sp.name})), h("span",{class:"note",text: sp.hidden? "Sign-ups are closed" : (sp.note || (sp.shared?"Can be shared":""))}));
-    cols.push({head, allDay:[], timed:v.timed.filter(x=>x.kind==="booking"&&x.space.id===sp.id), mode:"space", closed:sp.hidden, showNow:d===t, noDot:cols.length>0, onSlot: sp.hidden? null : m=>openBookDialog({date:d,spaceId:sp.id,start:m})});
+  // spaces signed up for by the week come first, so their week shows without scrolling sideways
+  for(const sp of st.spaces.filter(x=>x.byWeek).concat(st.spaces.filter(x=>!x.byWeek))){ if(S.hiddenSpaces.has(sp.id)) continue;
+    const head=h("div",{class:"tg-head c-"+sp.color}, h("span",{class:"d3"}, h("span",{class:"sw"}), h("span",{text:sp.name})), h("span",{class:"note",text: sp.hidden? "Sign-ups are closed" : (sp.note || (sp.byWeek?"Signed up for by the week":(sp.shared?"Can be shared":"")))}));
+    cols.push({head, allDay:v.allDay.filter(x=>x.kind==="booking"&&x.space.id===sp.id), timed:v.timed.filter(x=>x.kind==="booking"&&x.space.id===sp.id), mode:"space", closed:sp.hidden, showNow:d===t, noDot:cols.length>0, onSlot: sp.hidden? null : m=>openBookDialog({date:d,spaceId:sp.id,start:m})});
   }
   if(!cols.length) return h("p",{class:"empty",style:"padding:28px 16px",text:"Nothing is set to show. Turn a calendar or a space back on in the list."});
-  return renderGrid(cols,150);
+  return renderGrid(cols, cols.length>9?124:150);
 }
 function renderAgenda(idx){
   const t=today(), box=h("div",{});
@@ -560,7 +578,7 @@ function renderAgenda(idx){
     for(const x of rows){
       const isEv=x.kind==="event";
       day.append(h("button",{type:"button",class:"ag-row c-"+(isEv?x.cal.color:x.space.color),onclick:()=>openEntry(x)},
-        h("span",{class:"tm",text: x.start==null? "All day" : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
+        h("span",{class:"tm",text: x.start==null? (x.kind==="booking"?"All week":"All day") : span(x.start,x.end)}), h("span",{class:"sw"+(isEv?" ring":"")}),
         h("span",{}, h("b",{text:isEv?x.ev.title:x.space.name}), h("span",{class:"sub",text:isEv? x.cal.name+", view only" : (x.bk.what? x.bk.what+", "+nameOf(x.bk) : nameOf(x.bk))}))));
     }
     box.append(day);
@@ -598,10 +616,10 @@ function renderSide(){
     let sub=null;
     if(!s.connected) sub=h("span",{class:"sub",text:"Not connected yet"});
     else if(s.error) sub=h("span",{class:"sub bad",text:S.director? s.error : "Could not be loaded just now"});
-    else if(s.loading) sub=h("span",{class:"sub",text:"Loading from Google"});
+    else if(s.loading) sub=h("span",{class:"sub",text:"Loading"});
     cals.append(h("button",{type:"button",class:"tog c-"+c.color,"aria-pressed":String(on),title:on?"Hide this calendar":"Show this calendar",onclick:()=>{ on?S.hiddenCals.add(c.id):S.hiddenCals.delete(c.id); saveHidden(); render(); }}, h("span",{class:"sw"}), h("span",{}, h("span",{class:"nm",text:c.name}), sub)));
   }
-  if(S.director && st.calendars.some(c=>!(status[c.id]||{}).connected)) cals.append(h("button",{type:"button",class:"linkbtn",style:"padding:4px 6px",text:"Connect a Google calendar",onclick:openSettings}));
+  if(S.director && st.calendars.some(c=>!(status[c.id]||{}).connected)) cals.append(h("button",{type:"button",class:"linkbtn",style:"padding:4px 6px",text:"Connect a calendar",onclick:openSettings}));
 
   const sp=$("space-toggles"); sp.textContent="";
   if(!st.spaces.length){
@@ -610,7 +628,7 @@ function renderSide(){
   }
   for(const s of st.spaces){
     const on=!S.hiddenSpaces.has(s.id);
-    const subText=s.hidden? "Sign-ups are closed" : (s.note || (s.shared? "Can be shared" : ""));
+    const subText=s.hidden? "Sign-ups are closed" : (s.note || (s.byWeek? "Signed up for by the week" : (s.shared? "Can be shared" : "")));
     sp.append(h("button",{type:"button",class:"tog c-"+s.color,"aria-pressed":String(on),title:on?"Hide this space":"Show this space",onclick:()=>{ on?S.hiddenSpaces.add(s.id):S.hiddenSpaces.delete(s.id); saveHidden(); render(); }}, h("span",{class:"sw"}), h("span",{}, h("span",{class:"nm",text:s.name}), subText?h("span",{class:"sub",text:subText}):null)));
   }
   const anyHidden=st.spaces.some(s=>S.hiddenSpaces.has(s.id))||st.calendars.some(c=>S.hiddenCals.has(c.id));
@@ -620,7 +638,7 @@ function renderSide(){
   const list=(S.data&&S.data.mine)||[]; const byId=new Map(st.spaces.map(s=>[s.id,s]));
   if(!list.length) mine.append(h("p",{class:"empty",text:S.shared&&!S.who? "Your sign-ups will be listed here after your first one." : "You have no upcoming sign-ups."}));
   for(const b of list){ const space=byId.get(b.spaceId); if(!space) continue;
-    mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(b.what?", "+b.what:"")}), h("span",{class:"sub",text:fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end)+(b.seriesId?", weekly":"")}))));
+    mine.append(h("button",{type:"button",class:"mine-row c-"+space.color,onclick:()=>{ go("day",b.date); openBookDialog({edit:b}); }}, h("span",{class:"sw"}), h("span",{}, h("b",{text:space.name+(b.what?", "+b.what:"")}), h("span",{class:"sub",text:(b.week? weekLabel(b.date) : fmt(b.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(b.start,b.end))+(b.seriesId?", weekly":"")}))));
   }
 }
 
@@ -684,13 +702,25 @@ function step(dir){
 /* ---------- sign-up dialog ---------- */
 const Bk={edit:null, armed:null};
 function timeOptions(sel, lo, hi, value){ sel.textContent=""; for(let m=lo;m<=hi;m+=15) sel.append(h("option",{value:String(m),text:clock(m)})); if(value!=null && ![...sel.options].some(o=>Number(o.value)===value)){ sel.append(h("option",{value:String(value),text:clock(value)})); } if(value!=null) sel.value=String(value); }
-function bkValues(){ return { spaceId:$("bk-space").value, date:$("bk-date").value, start:Number($("bk-start").value), end:Number($("bk-end").value), what:$("bk-what").value.trim(), ...($("bk-who-wrap").hidden? {} : {who:$("bk-who").value.trim()}) }; }
+function bkSpace(){ return settings().spaces.find(s=>s.id===$("bk-space").value); }
+function bkValues(){ const week=!!(bkSpace()||{}).byWeek; return { spaceId:$("bk-space").value, date:$("bk-date").value, start:week?0:Number($("bk-start").value), end:week?1440:Number($("bk-end").value), what:$("bk-what").value.trim(), ...($("bk-who-wrap").hidden? {} : {who:$("bk-who").value.trim()}) }; }
 function bkHint(){
   const v=bkValues(), st=settings(), space=st.spaces.find(s=>s.id===v.spaceId), box=$("bk-avail");
-  const note=$("bk-space-note"); note.hidden=!(space&&space.note); note.textContent=space&&space.note? space.note : "";
+  const week=!!(space&&space.byWeek);
+  const noteText=[space&&space.note, week?"This space is signed up for by the week, Monday to Friday.":""].filter(Boolean).join(" ");
+  const note=$("bk-space-note"); note.hidden=!noteText; note.textContent=noteText;
+  $("bk-times").hidden=week; $("bk-date-label").textContent=week?"Any day in the week you want":"Date";
   box.className="nudge plain";
   if(!space){ box.textContent="Choose a space to see whether it is free."; return; }
   if(!v.date){ box.textContent="Choose a date."; return; }
+  if(week){
+    const mon=mondayOf(v.date), span5=fmt(mon,{month:"short",day:"numeric"})+" to "+fmt(addDays(mon,4),{month:"short",day:"numeric"});
+    if(!S.range || mon<S.range.from || mon>S.range.to){ box.textContent="This week is outside the days on screen, so it is checked when you save."; return; }
+    const taken=(S.data.bookings||[]).filter(b=>b.spaceId===space.id&&b.date===mon&&(!Bk.edit||b.id!==Bk.edit.id));
+    if(!taken.length){ box.className="nudge ok"; box.textContent=space.name+" is free for the week of "+span5+"."; return; }
+    if(space.shared){ box.className="nudge ok"; box.textContent=nameOf(taken[0])+" is also signed up that week. This space can be shared."; return; }
+    box.className="nudge"; box.textContent="Taken. "+nameOf(taken[0])+" has "+space.name+" for the week of "+span5+"."; return;
+  }
   if(v.end<=v.start){ box.className="nudge"; box.textContent="The end time needs to be after the start time."; return; }
   if(!S.range || v.date<S.range.from || v.date>S.range.to){ box.textContent="This date is outside the days on screen, so it is checked when you save."; return; }
   const others=(S.data.bookings||[]).filter(b=>b.spaceId===space.id&&b.date===v.date&&b.start<v.end&&v.start<b.end&&(!Bk.edit||b.id!==Bk.edit.id));
@@ -731,14 +761,14 @@ function openBookDialog(opts){
 function openBooking(b){
   if(S.director || b.by===S.me){ openBookDialog({edit:b}); return; }
   const space=settings().spaces.find(s=>s.id===b.spaceId);
-  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end)+(b.seriesId?", weekly":"")],["Who",nameOf(b)],b.what?["For",b.what]:null], note:"Only "+nameOf(b)+" or the director can change this sign-up." });
+  showInfo({ tag:"Space sign-up", title:(space?space.name:"Space")+(b.what?", "+b.what:""), rows:[["When",(b.week? "Week of "+fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\nMonday to Friday" : fmt(b.date,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(b.start,b.end))+(b.seriesId?", weekly":"")],["Who",nameOf(b)],b.what?["For",b.what]:null], note:"Only "+nameOf(b)+" or the director can change this sign-up." });
 }
 function openEventInfo(e, cal){
   let when;
   if(e.allDay) when = e.start===e.end ? fmt(e.start,{weekday:"long",month:"long",day:"numeric"})+"\nAll day" : fmt(e.start,{weekday:"short",month:"long",day:"numeric"})+" to "+fmt(e.end,{weekday:"short",month:"long",day:"numeric"});
   else { const sd=e.start.slice(0,10), ed=e.end.slice(0,10);
     when = sd===ed ? fmt(sd,{weekday:"long",month:"long",day:"numeric"})+"\n"+span(mins(e.start),mins(e.end)) : fmt(sd,{weekday:"short",month:"short",day:"numeric"})+", "+clock(mins(e.start))+" to "+fmt(ed,{weekday:"short",month:"short",day:"numeric"})+", "+clock(mins(e.end)); }
-  showInfo({ tag:"School calendar, view only", locked:true, title:e.title, rows:[["When",when],["Calendar",cal.name],e.location?["Where",e.location]:null,e.desc?["Details",e.desc]:null], note:"This comes from Google Calendar. Changes are made there and show up here within about ten minutes." });
+  showInfo({ tag:"School calendar, view only", locked:true, title:e.title, rows:[["When",when],["Calendar",cal.name],e.location?["Where",e.location]:null,e.desc?["Details",e.desc]:null], note:"This comes from "+cal.name+". Changes are made where that calendar is kept and show up here within about ten minutes." });
 }
 function showInfo(o){
   const tag=$("info-tag"); tag.textContent=""; if(o.locked) tag.append(lock()); tag.append(o.tag);
@@ -761,7 +791,8 @@ async function saveBooking(e){
     else {
       const r=await api("/api/book",Object.assign({},v,repeat?{repeatUntil:$("bk-until").value}:{}));
       const space=settings().spaces.find(s=>s.id===v.spaceId), name=space?space.name:"the space";
-      if(r.made.length===1 && !r.skipped.length) toast("You are signed up for "+name+", "+fmt(v.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(v.start,v.end)+".");
+      if(r.made.length===1 && !r.skipped.length && r.made[0].week) toast("You are signed up for "+name+" for the "+weekLabel(r.made[0].date).replace(/^W/,"w")+".");
+      else if(r.made.length===1 && !r.skipped.length) toast("You are signed up for "+name+", "+fmt(v.date,{weekday:"short",month:"short",day:"numeric"})+", "+span(v.start,v.end)+".");
       else toast("You are signed up for "+name+" for "+r.made.length+(r.made.length===1?" week":" weeks")+"."+(r.skipped.length? " Skipped "+r.skipped.map(s=>fmt(s.date,{month:"short",day:"numeric"})+" ("+s.by+" has it)").join(", ")+"." : ""));
     }
     $("dlg-book").close(); S.anchor = S.view==="month"? S.anchor : v.date; await refresh(true);
@@ -781,7 +812,7 @@ const COLOR_NAMES={moss:"Moss",sky:"Sky",marigold:"Marigold",clay:"Clay",plum:"P
 let Draft=null;
 function colorSelect(value, onchange){ const s=h("select",{"aria-label":"Color",onchange:e=>onchange(e.target.value)}); for(const [k,n] of Object.entries(COLOR_NAMES)) s.append(h("option",{value:k,text:n})); s.value=value; return s; }
 function cloneSettings(){ const st=settings(); return { calendars:st.calendars.map(c=>Object.assign({},c)), spaces:st.spaces.map(s=>Object.assign({},s)), dayStart:st.dayStart, dayEnd:st.dayEnd, weekends:st.weekends!==false }; }
-function programFromDraft(){ return { calendars:Draft.calendars.map(c=>({id:c.id,name:c.name,color:c.color})), spaces:Draft.spaces.filter(s=>(s.name||"").trim()).map(s=>({id:s.id,name:s.name,color:s.color,note:s.note||"",shared:!!s.shared,hidden:!!s.hidden})), dayStart:Draft.dayStart, dayEnd:Draft.dayEnd, weekends:Draft.weekends }; }
+function programFromDraft(){ return { calendars:Draft.calendars.map(c=>({id:c.id,name:c.name,color:c.color})), spaces:Draft.spaces.filter(s=>(s.name||"").trim()).map(s=>({id:s.id,name:s.name,color:s.color,note:s.note||"",shared:!!s.shared,hidden:!!s.hidden,byWeek:!!s.byWeek})), dayStart:Draft.dayStart, dayEnd:Draft.dayEnd, weekends:Draft.weekends }; }
 function renderSettings(){
   const status=(S.data&&S.data.calendarStatus)||{};
   const cals=$("set-cals"); cals.textContent="";
@@ -793,13 +824,13 @@ function renderSettings(){
       h("button",{type:"button",class:"btn warn small rm",text:"Remove",onclick:()=>{ Draft.calendars.splice(i,1); renderSettings(); }})));
     const line=h("p",{class:"status"});
     if(c.hasAddress && s.error){ line.className="status bad"; line.textContent=s.error; }
-    else if(c.hasAddress){ line.className="status good"; line.textContent="Connected, view only."+(c.secret?"":" Using the public address."); }
-    else line.textContent="Not connected yet. Paste this calendar's address from Google.";
-    const input=h("input",{type:"text",id:"set-cal-addr-"+i,placeholder:c.hasAddress?"Paste a new address to replace the saved one":"https://calendar.google.com/calendar/ical/…",autocomplete:"off",spellcheck:"false","aria-label":"Google Calendar address for "+(c.name||"this calendar")});
+    else if(c.hasAddress){ line.className="status good"; line.textContent="Connected, view only."+(c.publicAddress?" Using the public address.":""); }
+    else line.textContent="Not connected yet. Paste this calendar's address.";
+    const input=h("input",{type:"text",id:"set-cal-addr-"+i,placeholder:c.hasAddress?"Paste a new address to replace the saved one":"https://calendar.google.com/calendar/ical/…",autocomplete:"off",spellcheck:"false","aria-label":"Calendar address for "+(c.name||"this calendar")});
     const busy=CalBusy.i===i;
     if(busy && CalBusy.address) input.value=CalBusy.address;
     const msg=h("p",{class:"msg",text:CalMsg.i===i?CalMsg.text:""});
-    const connect=h("button",{type:"button",class:"btn small",disabled:busy,text:busy&&CalBusy.address? "Checking with Google…" : (c.hasAddress?"Replace":"Connect"),onclick:()=>connectCalendar(i,input.value)});
+    const connect=h("button",{type:"button",class:"btn small",disabled:busy,text:busy&&CalBusy.address? "Checking the address…" : (c.hasAddress?"Replace":"Connect"),onclick:()=>connectCalendar(i,input.value)});
     card.append(line, h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"}, h("div",{style:"flex:1;min-width:200px"},input), connect, c.hasAddress? h("button",{type:"button",class:"btn warn small",disabled:busy,text:busy&&!CalBusy.address?"Disconnecting…":"Disconnect",onclick:()=>connectCalendar(i,"")}) : null), msg);
     cals.append(card);
   });
@@ -815,7 +846,8 @@ function renderSettings(){
       h("button",{type:"button",class:"btn warn small rm",text:"Remove",onclick:()=>{ Draft.spaces.splice(i,1); renderSettings(); }}),
       h("div",{class:"opts"},
         h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-open-"+i,checked:!s.hidden,onchange:e=>{ s.hidden=!e.target.checked; }}),"Open for sign-ups"),
-        h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-shared-"+i,checked:!!s.shared,onchange:e=>{ s.shared=e.target.checked; }}),"More than one group can use it at the same time"))));
+        h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-shared-"+i,checked:!!s.shared,onchange:e=>{ s.shared=e.target.checked; }}),"More than one group can use it at the same time"),
+        h("label",{class:"check"},h("input",{type:"checkbox",id:"set-sp-week-"+i,checked:!!s.byWeek,onchange:e=>{ s.byWeek=e.target.checked; }}),"Signed up for by the week"))));
   });
   if(!Draft.spaces.length) spaces.append(h("p",{class:"empty",text:"No spaces yet. Add each area educators take turns using."}));
   const a=$("set-start"), b=$("set-end"); a.textContent=""; b.textContent="";
@@ -882,7 +914,7 @@ function wire(){
   $("set-form").addEventListener("submit",e=>{ e.preventDefault(); saveSettings(false); });
   $("set-close").onclick=()=>$("dlg-set").close();
   $("set-add-cal").onclick=()=>{ Draft.calendars.push({name:"",color:nextColor(Draft.calendars.concat(Draft.spaces))}); renderSettings(); const el=$("set-cal-name-"+(Draft.calendars.length-1)); if(el) el.focus(); };
-  $("set-add-space").onclick=()=>{ Draft.spaces.push({name:"",color:nextColor(Draft.spaces.concat(Draft.calendars)),note:"",shared:false,hidden:false}); renderSettings(); const el=$("set-sp-name-"+(Draft.spaces.length-1)); if(el) el.focus(); };
+  $("set-add-space").onclick=()=>{ Draft.spaces.push({name:"",color:nextColor(Draft.spaces.concat(Draft.calendars)),note:"",shared:false,hidden:false,byWeek:false}); renderSettings(); const el=$("set-sp-name-"+(Draft.spaces.length-1)); if(el) el.focus(); };
   $("set-start").addEventListener("change",e=>{ Draft.dayStart=Number(e.target.value); }); $("set-end").addEventListener("change",e=>{ Draft.dayEnd=Number(e.target.value); });
   $("set-weekends").addEventListener("change",e=>{ Draft.weekends=e.target.checked; });
   document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{ if(e.target===d) d.close(); }));   // a click on the dimmed area closes

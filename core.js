@@ -11,6 +11,7 @@
   function fromDayNum(n) { return new Date(n * 864e5).toISOString().slice(0, 10); }
   function validDate(s) { return typeof s === 'string' && DATE_RE.test(s) && fromDayNum(dayNum(s)) === s; }
   function addDays(s, n) { return fromDayNum(dayNum(s) + n); }
+  function mondayOf(s) { return addDays(s, -((new Date(dayNum(s) * 864e5).getUTCDay() + 6) % 7)); }
   function clock(min) { const h = Math.floor(min / 60), m = min % 60; const h12 = h % 12 === 0 ? 12 : h % 12; return h12 + ':' + String(m).padStart(2, '0') + (h >= 12 && h < 24 ? ' pm' : ' am'); }
   function niceDate(s) { return new Date(dayNum(s) * 864e5).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric' }); }
   function text(v, max) { return String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max); }
@@ -21,7 +22,7 @@
     const d = defaultProgram(); p = p && typeof p === 'object' ? p : {};
     const out = { calendars: [], spaces: [], dayStart: d.dayStart, dayEnd: d.dayEnd, weekends: p.weekends !== false };
     for (const c of Array.isArray(p.calendars) ? p.calendars : d.calendars) if (c && /^[a-z0-9]{3,16}$/.test(c.id || '')) out.calendars.push({ id: c.id, name: text(c.name, 40) || 'Calendar', color: COLORS.includes(c.color) ? c.color : 'sky' });
-    for (const s of Array.isArray(p.spaces) ? p.spaces : []) if (s && /^[a-z0-9]{3,16}$/.test(s.id || '') && text(s.name, 40)) out.spaces.push({ id: s.id, name: text(s.name, 40), color: COLORS.includes(s.color) ? s.color : 'moss', note: text(s.note, 120), shared: !!s.shared, hidden: !!s.hidden });
+    for (const s of Array.isArray(p.spaces) ? p.spaces : []) if (s && /^[a-z0-9]{3,16}$/.test(s.id || '') && text(s.name, 40)) out.spaces.push({ id: s.id, name: text(s.name, 40), color: COLORS.includes(s.color) ? s.color : 'moss', note: text(s.note, 120), shared: !!s.shared, hidden: !!s.hidden, byWeek: !!s.byWeek });
     if (Number.isInteger(p.dayStart) && Number.isInteger(p.dayEnd) && p.dayStart >= 0 && p.dayEnd <= 1440 && p.dayEnd - p.dayStart >= 120) { out.dayStart = p.dayStart; out.dayEnd = p.dayEnd; }
     return out;
   }
@@ -53,8 +54,9 @@
       if (n > 400) throw fail(400, 'Sign-ups can be made up to about a year ahead.');
       if (n < -400) throw fail(400, 'That date is too far in the past.');
     }
+    const lastDay = b => b.week ? addDays(b.date, 4) : b.date;   // a week-long sign-up runs through Friday
     const nameOf = b => b.who || b.by;   // with a shared passcode the educator's own name is kept in who
-    function takenLine(space, c) { return space.name + ' is already taken then. ' + nameOf(c) + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
+    function takenLine(space, c) { return c.week ? space.name + ' is already taken that week. ' + nameOf(c) + ' has it.' : space.name + ' is already taken then. ' + nameOf(c) + ' has it from ' + clock(c.start) + ' to ' + clock(c.end) + '.'; }
     function mayChange(ctx, b) { return ctx.director || b.by === ctx.name; }
 
     function book(ctx, input) {
@@ -62,23 +64,28 @@
       const space = spaceFor(input.spaceId);
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden) throw fail(409, space.name + ' is not open for sign-ups right now.');
-      checkDate(input.date); checkTimes(input.start, input.end);
+      // a space signed up for by the week is held Monday to Friday, whichever day of that week was picked
+      const week = !!space.byWeek;
+      checkDate(input.date);
+      const first = week ? mondayOf(input.date) : input.date, start = week ? 0 : input.start, end = week ? 1440 : input.end;
+      checkTimes(start, end);
       const what = text(input.what, 80), who = text(input.who, 40);
       if (ctx.shared && !who) throw fail(400, 'Add your name so everyone can see who has the space.');
-      const dates = [input.date];
+      const dates = [first];
       if (input.repeatUntil) {
-        if (!validDate(input.repeatUntil) || input.repeatUntil < input.date) throw fail(400, 'The last week needs to be on or after the first date.');
-        for (let d = addDays(input.date, 7); d <= input.repeatUntil; d = addDays(d, 7)) dates.push(d);
+        if (!validDate(input.repeatUntil) || input.repeatUntil < first) throw fail(400, 'The last week needs to be on or after the first date.');
+        for (let d = addDays(first, 7); d <= input.repeatUntil; d = addDays(d, 7)) dates.push(d);
         if (dates.length > MAX_WEEKS) throw fail(400, 'A weekly sign-up can run for up to ' + MAX_WEEKS + ' weeks. Choose an earlier last week.');
         checkDate(dates[dates.length - 1]);
       }
-      const plan = dates.map(d => ({ date: d, clash: space.shared ? null : clashFor(space.id, d, input.start, input.end, null) }));
+      const plan = dates.map(d => ({ date: d, clash: space.shared ? null : clashFor(space.id, d, start, end, null) }));
       const open = plan.filter(p => !p.clash);
       if (!open.length) throw fail(409, takenLine(space, plan[0].clash) + (dates.length > 1 ? ' Every week you chose is taken.' : ''));
       const seriesId = dates.length > 1 ? newId() : undefined;
       const made = [], months = new Set();
       for (const p of open) {
-        const b = { id: newId(), spaceId: space.id, date: p.date, start: input.start, end: input.end, by: ctx.name, what, createdAt: Date.now() };
+        const b = { id: newId(), spaceId: space.id, date: p.date, start, end, by: ctx.name, what, createdAt: Date.now() };
+        if (week) b.week = true;
         if (who) b.who = who;
         if (seriesId) b.seriesId = seriesId;
         put(b); made.push(b); months.add(b.date.slice(0, 7));
@@ -97,11 +104,14 @@
       const space = spaceFor(next.spaceId);
       if (!space) throw fail(400, 'Choose a space.');
       if (space.hidden && next.spaceId !== b.spaceId) throw fail(409, space.name + ' is not open for sign-ups right now.');
-      checkDate(next.date); checkTimes(next.start, next.end);
+      const week = !!space.byWeek;
+      checkDate(next.date);
+      if (week) { next.date = mondayOf(next.date); next.start = 0; next.end = 1440; }
+      checkTimes(next.start, next.end);
       const clash = space.shared ? null : clashFor(space.id, next.date, next.start, next.end, b.id);
       if (clash) throw fail(409, takenLine(space, clash));
       const oldMonth = b.date.slice(0, 7);
-      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; put(b);
+      drop(b); Object.assign(b, next, { updatedByName: ctx.name, updatedAt: Date.now() }); if (who) b.who = who; else delete b.who; if (week) b.week = true; else delete b.week; put(b);
       onBooking(oldMonth, ctx.name); if (b.date.slice(0, 7) !== oldMonth) onBooking(b.date.slice(0, 7), ctx.name);
       return { booking: b };
     }
@@ -133,7 +143,7 @@
       const next = cleanProgram({ calendars: fix(cals), spaces: named, dayStart: input.dayStart, dayEnd: input.dayEnd, weekends: input.weekends });
       const t = today();
       for (const s of program.spaces) if (!next.spaces.some(n => n.id === s.id)) {
-        const n = [...byId.values()].filter(b => b.spaceId === s.id && b.date >= t).length;
+        const n = [...byId.values()].filter(b => b.spaceId === s.id && lastDay(b) >= t).length;
         if (n) throw fail(409, s.name + ' still has ' + n + (n === 1 ? ' upcoming sign-up' : ' upcoming sign-ups') + '. Remove those first, or turn off sign-ups for the space instead of deleting it.');
       }
       const gone = program.calendars.filter(c => !next.calendars.some(n => n.id === c.id)).map(c => c.id);
@@ -145,12 +155,12 @@
     function mine(name, limit, who) {
       const t = today();
       const seen = new Set();   // a weekly sign-up is listed once, by its next date
-      return [...byId.values()].filter(b => b.by === name && (!who || b.who === who) && b.date >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
+      return [...byId.values()].filter(b => b.by === name && (!who || b.who === who) && lastDay(b) >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start)
         .filter(b => { if (!b.seriesId) return true; if (seen.has(b.seriesId)) return false; seen.add(b.seriesId); return true; }).slice(0, limit || 8);
     }
     return { book, update, remove, setProgram, view, mine, get program() { return program; }, count: () => byId.size };
   }
 
-  const api = { COLORS, MAX_WEEKS, fail, dayNum, fromDayNum, validDate, addDays, clock, niceDate, text, defaultProgram, cleanProgram, createCore };
+  const api = { COLORS, MAX_WEEKS, fail, dayNum, fromDayNum, validDate, addDays, mondayOf, clock, niceDate, text, defaultProgram, cleanProgram, createCore };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.FCCore = api;
 })(typeof self !== 'undefined' ? self : this);

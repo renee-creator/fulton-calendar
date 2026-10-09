@@ -12,7 +12,7 @@
   let rev = 0;
   const core = C.createCore({ newId, today: () => today, onBooking: () => { rev++; }, onProgram: () => { rev++; },
     program: { calendars: [{ id: 'cal1', name: 'School calendar', color: 'sky' }, { id: 'cal2', name: 'Staff calendar', color: 'plum' }],
-      spaces: [{ id: 'sp01', name: 'Atelier', color: 'marigold', note: 'Example space' }, { id: 'sp02', name: 'Garden', color: 'moss', note: 'Example space', shared: true }, { id: 'sp03', name: 'Kitchen', color: 'clay', note: 'Example space' }, { id: 'sp04', name: 'Library corner', color: 'teal', note: 'Example space' }],
+      spaces: [{ id: 'sp01', name: 'Atelier', color: 'marigold', note: 'Example space' }, { id: 'sp02', name: 'Garden', color: 'moss', note: 'Example space', shared: true }, { id: 'sp03', name: 'Kitchen', color: 'clay', note: 'Example space' }, { id: 'sp04', name: 'Library corner', color: 'teal', note: 'Example space' }, { id: 'sp05', name: 'Big yard', color: 'slate', note: 'Example space', byWeek: true }],
       dayStart: 420, dayEnd: 1080, weekends: true } });
   const seed = (who, spaceId, offset, start, end, what, weeks) => { try { const date = C.addDays(sunday, offset); core.book({ name: who }, { spaceId, date, start, end, what, repeatUntil: weeks ? C.addDays(date, 7 * weeks) : undefined }); } catch (e) {} };
   seed('Hannah', 'sp01', 1, 570, 630, 'Small group clay work', 3);
@@ -26,6 +26,7 @@
   seed('Hannah', 'sp04', 3, 780, 825, 'Story circle');
   seed('Chris', 'sp04', 5, 780, 825, 'Book making');
   seed('Renee', 'sp04', 2, 840, 900, 'Family tour');
+  seed('Chris', 'sp05', 1, 0, 0, 'Loose parts week');
   rev = 0;
 
   function events(from, to) {
@@ -43,7 +44,7 @@
   function settingsFor() {
     const p = core.program;
     if (!ctx.director) return p;
-    return Object.assign({}, p, { calendars: p.calendars.map(c => Object.assign({}, c, { hasAddress: !!connected[c.id], secret: true })) });
+    return Object.assign({}, p, { calendars: p.calendars.map(c => Object.assign({}, c, { hasAddress: !!connected[c.id] })) });
   }
   function call(path, body) {
     return new Promise((resolve, reject) => {
@@ -62,7 +63,7 @@
           if (path === '/api/calendar/connect') {
             if (!ctx.director) throw C.fail(403, 'Only the director can connect calendars.');
             const a = String(body.address || '').trim();
-            if (a && !/calendar\.google\.com|@/.test(a)) throw C.fail(400, 'Only Google Calendar addresses can be connected. In Google Calendar, open the calendar\'s Settings and sharing, then copy the Secret address in iCal format.');
+            if (a && !/calendar\.google\.com|signupgenius\.com|@/.test(a)) throw C.fail(400, 'Only Google Calendar and SignUpGenius addresses can be connected.');
             if (a) connected[body.id] = true; else delete connected[body.id]; rev++;
             return resolve({ settings: settingsFor(), found: a ? { name: 'an example calendar', events: 0 } : null });
           }

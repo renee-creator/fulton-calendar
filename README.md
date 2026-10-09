@@ -4,8 +4,10 @@ One shared calendar for Fulton Community School & Farm. It shows the school's Go
 
 ## What it does
 
-- **School calendars from Google** appear for everyone as outlined entries. They are view only. The server only reads them and never sends anything back to Google. New and changed Google events show up within about ten minutes.
+- **School calendars** from Google Calendar, and calendar feeds from SignUpGenius, appear for everyone as outlined entries. They are view only. The server only reads them and never sends anything back. New and changed events show up within about ten minutes.
 - **Space sign-ups** appear as filled entries. Any educator can sign up for a space for a date and time, once or every week. Two sign-ups cannot overlap in the same space unless the director marked that space as shareable.
+- **Week-long sign-ups.** The director can mark a space as signed up for by the week. One sign-up then holds it Monday to Friday.
+- **Shared passcodes.** A passcode entered without a name signs in as Staff. The sign-up form then asks for the educator's name, so the calendar still shows who has each space.
 - **Day, Week and Month views.** The Day view puts each space in its own column, which makes free times easy to see. On a phone the Week view becomes a list.
 
 ## How it runs
@@ -43,6 +45,18 @@ The director does this once per calendar, in Settings.
 4. In Fulton Calendar, open Settings, paste the address in that calendar's box, and choose Connect.
 
 Anyone holding a secret address can read that calendar. The address is kept in the private records repository and is never sent to an educator's browser. If Google is not offering a secret address, make the calendar public and paste its Public address in iCal format instead.
+
+## Showing SignUpGenius sign ups
+
+A paid SignUpGenius plan can publish its sign ups as a calendar feed, which Fulton Calendar reads the same way it reads Google.
+
+1. In SignUpGenius, open the Sign Ups page, choose Tools, then Calendar Subscriptions.
+2. Choose Create iCal Feed, give it a title, and add up to five sign ups.
+3. Choose filled slots, unfilled slots, or both, then Save.
+4. On the feed, choose the calendar icon, then Calendar Help, and copy the webcal link.
+5. In Fulton Calendar, open Settings, choose Add a calendar, paste the link, and choose Connect.
+
+Families keep signing up in SignUpGenius. Fulton Calendar only shows what is there.
 
 ## Editing the page
 

@@ -97,6 +97,23 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     assert.equal((await post('/api/booking/remove', { id: sv.bookings.find(x => x.who === 'Ellie').id }, staff.token)).body.removed.length, 1);
     ok('shared passcode sign-ups carry the educator name');
 
+    // a space signed up for by the week is held Monday to Friday, whichever day is picked
+    let cur0 = (await post('/api/view', { from: '2026-10-05', to: '2026-10-11' }, renee.token)).body.settings;
+    s = await post('/api/settings', { program: { ...cur0, spaces: [...cur0.spaces, { name: 'Large group yard', color: 'slate', byWeek: true }] } }, renee.token); assert.equal(s.status, 200);
+    const yard = s.body.settings.spaces.find(x => x.name === 'Large group yard'); assert.equal(yard.byWeek, true);
+    b = await post('/api/book', { spaceId: yard.id, date: '2026-10-21', start: 600, end: 660, what: 'Mud kitchen' }, hannah.token);
+    assert.equal(b.status, 200); assert.equal(b.body.made[0].date, '2026-10-19'); assert.equal(b.body.made[0].week, true); assert.equal(b.body.made[0].end, 1440);
+    b = await post('/api/book', { spaceId: yard.id, date: '2026-10-23' }, chris.token); assert.equal(b.status, 409); assert.match(b.body.error, /Large group yard is already taken that week\. Hannah has it\./);
+    b = await post('/api/book', { spaceId: yard.id, date: '2026-10-26', repeatUntil: '2026-11-13' }, chris.token); assert.equal(b.status, 200); assert.deepEqual(b.body.made.map(x => x.date), ['2026-10-26', '2026-11-02', '2026-11-09']);
+    assert.equal((await post('/api/booking/remove', { id: b.body.made[0].id, scope: 'following' }, chris.token)).body.removed.length, 3);
+    ok('week-long sign-ups');
+
+    // SignUpGenius feeds are accepted, other websites are not
+    const { normalizeFeed } = require('../server.js');
+    assert.equal(normalizeFeed('webcal://www.signupgenius.com/calendar/feed/abc123.ics'), 'https://www.signupgenius.com/calendar/feed/abc123.ics');
+    assert.throws(() => normalizeFeed('https://signupgenius.com.evil.example/feed.ics')); assert.throws(() => normalizeFeed('http://www.signupgenius.com/feed.ics'));
+    ok('SignUpGenius addresses accepted');
+
     // weekly
     b = await post('/api/book', { spaceId: atelier.id, date: '2026-10-06', start: 540, end: 585, what: 'Weekly atelier', repeatUntil: '2026-11-03' }, chris.token);
     assert.equal(b.status, 200); assert.equal(b.body.made.length, 4); assert.deepEqual(b.body.skipped.map(x => x.date), ['2026-10-13']);
@@ -135,7 +152,7 @@ const ok = (name) => { passed++; console.log('  ok', name); };
     child = await start();
     const after = (await post('/api/view', { from: '2026-10-05', to: '2026-11-15' }, hannah.token)).body;
     assert.deepEqual(after.bookings.map(x => x.id).sort(), before.bookings.map(x => x.id).sort());
-    assert.equal(after.events.length, before.events.length); assert.equal(after.settings.spaces.length, 2);
+    assert.equal(after.events.length, before.events.length); assert.equal(after.settings.spaces.length, 3);
     ok('records saved to GitHub and loaded again after a restart');
 
     // disconnect

@@ -207,7 +207,8 @@ async function probeKey() {
 setInterval(probeKey, 120000).unref();
 
 /* ---------- Google calendars, read only ---------- */
-const NOT_GOOGLE = 'Only Google Calendar addresses can be connected. In Google Calendar, open the calendar\'s Settings and sharing, then copy the Secret address in iCal format.';
+const NOT_GOOGLE = 'Only Google Calendar and SignUpGenius addresses can be connected. For a Google calendar, open its Settings and sharing page and copy the Secret address in iCal format. For SignUpGenius, open the calendar feed, choose Calendar Help, and copy the webcal link.';
+const isGenius = host => /(^|\.)signupgenius\.com$/i.test(host);
 function publicAddress(calendarId) { return 'https://calendar.google.com/calendar/ical/' + encodeURIComponent(calendarId) + '/public/basic.ics'; }
 // Accepts the secret or public iCal address, a calendar ID, or an embed or share link, and returns the address to read
 function normalizeFeed(raw) {
@@ -218,6 +219,7 @@ function normalizeFeed(raw) {
   if (/^[^\s\/@]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(s)) return publicAddress(s);
   let u; try { u = new URL(s); } catch (e) { throw fail(400, NOT_GOOGLE); }
   if (FEED_TEST_BASE && s.startsWith(FEED_TEST_BASE + '/')) return s;
+  if (u.protocol === 'https:' && isGenius(u.hostname) && !u.username && !u.port) return u.href;   // a SignUpGenius calendar feed, read the same way
   if (u.protocol !== 'https:' || !/^(calendar\.google\.com|www\.google\.com)$/i.test(u.hostname)) throw fail(400, NOT_GOOGLE);
   const m = u.pathname.match(/^\/calendar\/ical\/([^/]+)\/(public|private-[a-z0-9]+)\/(basic|full)\.ics$/i);
   if (m) return 'https://calendar.google.com' + u.pathname;
@@ -226,15 +228,15 @@ function normalizeFeed(raw) {
   if (/^[^\s\/@]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(id)) return publicAddress(id);
   throw fail(400, NOT_GOOGLE);
 }
-function okFeedHost(u) { return (u.protocol === 'https:' && /(^|\.)(google\.com|googleusercontent\.com)$/i.test(u.hostname)) || (!!FEED_TEST_BASE && u.href.startsWith(FEED_TEST_BASE + '/')); }
+function okFeedHost(u) { return (u.protocol === 'https:' && (/(^|\.)(google\.com|googleusercontent\.com)$/i.test(u.hostname) || isGenius(u.hostname))) || (!!FEED_TEST_BASE && u.href.startsWith(FEED_TEST_BASE + '/')); }
 function fetchText(address, hops) {
   return new Promise((resolve, reject) => {
     let u; try { u = new URL(address); } catch (e) { reject(new Error('bad address')); return; }
-    if (!okFeedHost(u)) { reject(new Error('The calendar address pointed somewhere other than Google.')); return; }
+    if (!okFeedHost(u)) { reject(new Error('The calendar address pointed somewhere other than Google or SignUpGenius.')); return; }
     const req = (u.protocol === 'http:' ? http : https).get(u, { headers: { 'User-Agent': 'fulton-calendar', 'Accept': 'text/calendar, text/plain' } }, res => {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
         res.resume();
-        if ((hops || 0) >= 3) { reject(new Error('Google redirected too many times.')); return; }
+        if ((hops || 0) >= 3) { reject(new Error('The calendar address redirected too many times.')); return; }
         let next; try { next = new URL(res.headers.location, u).href; } catch (e) { reject(new Error('bad redirect')); return; }
         fetchText(next, (hops || 0) + 1).then(resolve, reject); return;
       }
@@ -243,7 +245,7 @@ function fetchText(address, hops) {
       res.on('end', () => resolve({ status: res.statusCode, text: Buffer.concat(chunks).toString('utf8') }));
       res.on('error', reject);
     });
-    req.setTimeout(20000, () => req.destroy(new Error('Google did not answer in time.')));
+    req.setTimeout(20000, () => req.destroy(new Error('The calendar did not answer in time.')));
     req.on('error', reject);
   });
 }
@@ -305,7 +307,7 @@ function expand(calId, parsed, from, to) {
   return out;
 }
 // A calendar still carrying a starter name takes the name Google gives it. A name the director typed is left alone.
-const STARTER_NAMES = new Set(['School calendar', 'Second calendar', 'Calendar']);
+const STARTER_NAMES = new Set(['School calendar', 'Second calendar', 'Calendar', 'New calendar']);
 function adoptName(calId, name) {
   if (!name || !core) return;
   const p = core.program; const cal = p.calendars.find(c => c.id === calId);
@@ -314,7 +316,9 @@ function adoptName(calId, name) {
 }
 const feeds = new Map();   // calendar id to { address, fetchedAt, parsed, error, hash, running }
 let feedRev = 0;
-function feedError(status) {
+function feedError(status, address) {
+  let genius = false; try { genius = isGenius(new URL(address).hostname); } catch (e) {}
+  if (genius) return status === 404 || status === 403 || status === 401 ? 'SignUpGenius would not share this calendar feed. Open the feed in SignUpGenius, choose Calendar Help, copy the webcal link again and paste it here.' : 'SignUpGenius answered ' + status + ' for this calendar feed. It will be tried again shortly.';
   if (status === 404 || status === 403 || status === 401) return 'Google would not share this calendar. Paste the Secret address in iCal format from the calendar\'s Settings and sharing page, or make the calendar public.';
   return 'Google answered ' + status + ' for this calendar. It will be tried again shortly.';
 }
@@ -327,9 +331,9 @@ function loadFeed(calId) {
     let error = '', parsed = null, hash = '';
     try {
       const r = await fetchText(address);
-      if (r.status !== 200) error = feedError(r.status);
+      if (r.status !== 200) error = feedError(r.status, address);
       else { hash = crypto.createHash('sha1').update(r.text).digest('hex'); if (hash === f.hash && f.parsed) parsed = f.parsed; else parsed = parseFeed(r.text); }
-    } catch (e) { error = e.message === 'not a calendar' ? 'That address did not return a calendar. Copy the Secret address in iCal format again and paste it here.' : 'This calendar could not be read just now. ' + (e.message || ''); }
+    } catch (e) { error = e.message === 'not a calendar' ? 'That address did not return a calendar. Copy the address again and paste it here.' : 'This calendar could not be read just now. ' + (e.message || ''); }
     if (feeds.get(calId) !== f) return f;   // disconnected or replaced while loading
     const before = f.hash + '|' + f.error;
     f.fetchedAt = Date.now(); f.error = error;
@@ -390,7 +394,7 @@ function statusPage(req, res) {
     [store.ready, store.ready ? `Records are connected. ${core.count()} sign-ups and ${core.program.spaces.length} spaces are loaded from ${RECORDS_REPO}.` : (store.error || 'Records are still loading.')],
     [TEACHERS.length > 0, TEACHERS.length ? `${TEACHERS.length} educator passcodes are set. Director access for ${TEACHERS.filter(t => isDirector(t.name)).map(t => t.name).join(', ') || 'nobody yet, so set DIRECTOR_NAMES'}.` : 'No educator passcodes are set. Add TEACHER_PASSCODES under Environment, like Hannah=maple garden 42.'],
   ];
-  if (store.ready) lines.push([connected > 0, connected ? `${connected} Google ${connected === 1 ? 'calendar is' : 'calendars are'} connected for viewing.` : 'No Google calendars are connected yet. The director adds them in the calendar\'s Settings.']);
+  if (store.ready) lines.push([connected > 0, connected ? `${connected} school ${connected === 1 ? 'calendar is' : 'calendars are'} connected for viewing.` : 'No school calendars are connected yet. The director adds them in the calendar\'s Settings.']);
   if (store.saveError) lines.unshift([false, store.saveError]);
   else if (saveWarn()) lines.unshift([false, saveWarn()]);
   if (SKIPPED_PASSCODES) lines.push([false, `${SKIPPED_PASSCODES} passcode entries were ignored. Each must be a passcode of at least 6 characters, or Name=passcode.`]);
@@ -407,7 +411,7 @@ const PAGE = readLocal('index.html');
 function settingsFor(me) {
   const p = core.program;
   if (!me.director) return p;
-  return Object.assign({}, p, { calendars: p.calendars.map(c => Object.assign({}, c, { hasAddress: !!feedAddresses[c.id], secret: /\/private-/.test(feedAddresses[c.id] || '') })) });
+  return Object.assign({}, p, { calendars: p.calendars.map(c => Object.assign({}, c, { hasAddress: !!feedAddresses[c.id], publicAddress: /\/public\/(basic|full)\.ics$/.test(feedAddresses[c.id] || '') })) });
 }
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -472,8 +476,8 @@ async function handle(req, res) {
     if (!address) { delete feedAddresses[cal.id]; feeds.delete(cal.id); }
     else {
       const r = await fetchText(address).catch(e => ({ status: 0, message: e.message }));
-      if (r.status !== 200) { err(req, res, 422, r.status ? feedError(r.status) : 'Google could not be reached just now. ' + (r.message || '') + ' Try again in a minute.'); return; }
-      let parsed; try { parsed = parseFeed(r.text); } catch (e) { err(req, res, 422, 'That address did not return a calendar. Copy the Secret address in iCal format again and paste it here.'); return; }
+      if (r.status !== 200) { err(req, res, 422, r.status ? feedError(r.status, address) : 'The calendar could not be reached just now. ' + (r.message || '') + ' Try again in a minute.'); return; }
+      let parsed; try { parsed = parseFeed(r.text); } catch (e) { err(req, res, 422, 'That address did not return a calendar. Copy the address again and paste it here.'); return; }
       feedAddresses[cal.id] = address;
       feeds.set(cal.id, { address, fetchedAt: Date.now(), parsed, error: '', hash: crypto.createHash('sha1').update(r.text).digest('hex'), running: null });
       body.found = { name: parsed.name, events: parsed.events.length };
